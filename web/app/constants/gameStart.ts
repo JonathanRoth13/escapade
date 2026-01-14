@@ -1,0 +1,89 @@
+import type { EngineResponse } from "../types/api";
+
+// Empty board ply string for starting a new game (player moves second)
+export const EMPTY_BOARD_PLY = "                 "; // 17 spaces: 16 for board + 1 for piece
+
+// Initial game state when player moves first
+export const PLAYER_MOVES_FIRST_DATA: EngineResponse = {
+  event: "normal",
+  board: [
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+  ],
+  tray: [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+  ],
+  pieceToPlace: 0, // Player selects first piece
+  description: "Select a piece for your opponent to place.",
+  moves: [
+    { piece: 0, hex: "0000000000000000000000", description: "You selected piece 0." },
+    { piece: 1, hex: "0000000000000000000010", description: "You selected piece 1." },
+    { piece: 2, hex: "0000000000000000000020", description: "You selected piece 2." },
+    { piece: 3, hex: "0000000000000000000030", description: "You selected piece 3." },
+    { piece: 4, hex: "0000000000000000000040", description: "You selected piece 4." },
+    { piece: 5, hex: "0000000000000000000050", description: "You selected piece 5." },
+    { piece: 6, hex: "0000000000000000000060", description: "You selected piece 6." },
+    { piece: 7, hex: "0000000000000000000070", description: "You selected piece 7." },
+    { piece: 8, hex: "0000000000000000000080", description: "You selected piece 8." },
+    { piece: 9, hex: "0000000000000000000090", description: "You selected piece 9." },
+    {
+      piece: 10,
+      hex: "00000000000000000000A0",
+      description: "You selected piece 10.",
+    },
+    {
+      piece: 11,
+      hex: "00000000000000000000B0",
+      description: "You selected piece 11.",
+    },
+    {
+      piece: 12,
+      hex: "00000000000000000000C0",
+      description: "You selected piece 12.",
+    },
+    {
+      piece: 13,
+      hex: "00000000000000000000D0",
+      description: "You selected piece 13.",
+    },
+    {
+      piece: 14,
+      hex: "00000000000000000000E0",
+      description: "You selected piece 14.",
+    },
+    {
+      piece: 15,
+      hex: "00000000000000000000F0",
+      description: "You selected piece 15.",
+    },
+  ],
+};

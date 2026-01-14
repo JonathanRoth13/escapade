@@ -1,0 +1,690 @@
+"use client";
+
+import { useReducer, useState } from "react";
+import Header from "./components/Header";
+import LandingPage from "./components/LandingPage";
+import GameBoard from "./components/GameBoard";
+import PieceInHandDisplay from "./components/PieceInHandDisplay";
+import PieceTray from "./components/PieceTray";
+import { gameReducer, initialGameState } from "./types/game";
+import type { EngineResponse } from "./types/api";
+import { EMPTY_BOARD_PLY } from "./constants/gameStart";
+
+export default function Home() {
+  // Game state managed by reducer
+  const [gameState, dispatch] = useReducer(gameReducer, initialGameState);
+
+  // UI state
+  const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<
+    "overview" | "history" | "analysis"
+  >("overview");
+
+  // Analysis mode: ephemeral UI state for piece selection
+  const [selectedPieceFromTray, setSelectedPieceFromTray] = useState<
+    number | undefined
+  >(undefined);
+
+  // ============================================================================
+  // Game Handlers - Play Mode
+  // ============================================================================
+
+  const startGame = async (p: "first" | "second") => {
+    dispatch({ type: "START_PLAY_MODE" });
+
+    if (p === "first") {
+      dispatch({ type: "PLAYER_MOVE_FIRST" });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `/api/engine?ply=${encodeURIComponent(EMPTY_BOARD_PLY)}&strength=${gameState.engineStrength}`,
+      );
+      const data = await response.json();
+
+      handleApiResponse(data);
+    } catch (_error) {
+      console.error("Error starting game:", _error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApiResponse = (data: EngineResponse) => {
+    // Add engine's move description to history
+    dispatch({ type: "ADD_MOVE_TO_HISTORY", move: data.description });
+
+    switch (data.event) {
+      case "normal":
+        dispatch({
+          type: "NORMAL_MOVE",
+          moves: data.moves,
+          board: data.board,
+          tray: data.tray,
+          pieceToPlace: data.pieceToPlace,
+          description: data.description,
+          analysis: data.analysis,
+        });
+        break;
+
+      case "engine_win":
+        dispatch({
+          type: "ENGINE_QUARTO",
+          board: data.board,
+          tray: data.tray,
+          boarder: data.highlighted,
+          outcome: "engine_win",
+          description: data.description,
+          analysis: data.analysis,
+        });
+        break;
+
+      case "draw":
+        dispatch({
+          type: "DRAW",
+          board: data.board,
+          tray: data.tray,
+          description: data.description,
+          analysis: data.analysis,
+        });
+        break;
+    }
+  };
+
+  const handlePieceClick = async (pieceId: number) => {
+    if (gameState.mode === "analysis") {
+      // Analysis mode: select piece from tray
+      if (gameState.tray[pieceId].available) {
+        setSelectedPieceFromTray(pieceId);
+        // Update tray to highlight selected piece
+        const newTray = gameState.tray.map((trayPiece, index) => ({
+          ...trayPiece,
+          border: index === pieceId && trayPiece.available,
+        }));
+        dispatch({
+          type: "SET_BOARD_AND_TRAY",
+          board: gameState.board,
+          tray: newTray,
+        });
+      }
+      return;
+    }
+
+    // Play mode logic
+    if (!gameState.moves) {
+      console.error("No moves available");
+      return;
+    }
+
+    // Find matching move
+    // For initial selection: match on piece only (both move.square and gameState.square are undefined)
+    // After placement: match on both piece and square
+    const matchingMove = gameState.moves.find((move) => {
+      if (move.piece !== pieceId) return false;
+
+      // Check if this is initial selection (no square on move) or post-placement (has square)
+      const isInitialSelection = move.square === undefined;
+      const hasSquareSelected = gameState.square !== undefined;
+
+      // For initial selection, there should be no square selected yet
+      if (isInitialSelection && !hasSquareSelected) return true;
+
+      // For post-placement selection, squares must match
+      if (!isInitialSelection && move.square === gameState.square) return true;
+
+      return false;
+    });
+
+    if (!matchingMove) {
+        /*
+        console.log("NO MOVE FOUND", {
+        pieceId,
+        square: gameState.square,
+        movesCount: gameState.moves?.length,
+        moves: gameState.moves,
+      });
+      */
+      // time to display an error message
+      return;
+    }
+
+    // Add player's move description to history
+    dispatch({ type: "ADD_MOVE_TO_HISTORY", move: matchingMove.description });
+
+    // Check if this move results in player win or draw (handle client-side)
+    if (matchingMove.quarto) {
+      // Player wins with quarto
+      const board = [...gameState.board];
+      if (matchingMove.square !== undefined && gameState.pieceToPlace !== undefined) {
+        board[matchingMove.square] = {
+          piece: gameState.pieceToPlace,
+          highlighted: false,
+        };
+      }
+
+      const tray = gameState.tray.map((t) => ({ ...t }));
+      if (gameState.pieceToPlace !== undefined) {
+        tray[gameState.pieceToPlace].available = false;
+      }
+
+      const highlighted = new Array(16).fill(false);
+      const squares = matchingMove.quarto.flatMap((q) => q.intersection);
+      for (let i = 0; i < 16; i++) {
+        highlighted[i] = squares.includes(i);
+      }
+
+      dispatch({
+        type: "PLAYER_QUARTO",
+        board: board.map((cell) => cell.piece),
+        tray: tray.map((t) => t.available),
+        boarder: highlighted,
+        description: matchingMove.description,
+        analysis: undefined,
+      });
+      return;
+    }
+
+    if (matchingMove.square !== undefined && matchingMove.piece === undefined) {
+      // Draw - player placed last piece, no quarto
+      const board = [...gameState.board];
+      board[matchingMove.square] = {
+        piece: gameState.pieceToPlace,
+        highlighted: false,
+      };
+
+      const tray = gameState.tray.map((t) => ({ ...t }));
+      if (gameState.pieceToPlace !== undefined) {
+        tray[gameState.pieceToPlace].available = false;
+      }
+
+      dispatch({
+        type: "DRAW",
+        board: board.map((cell) => cell.piece),
+        tray: tray.map((t) => t.available),
+        description: matchingMove.description,
+        analysis: undefined,
+      });
+      return;
+    }
+
+    // Normal move - call API for engine response
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `/api/engine?ply=${encodeURIComponent(matchingMove.hex)}&strength=${gameState.engineStrength}`,
+      );
+      const data = await response.json();
+      handleApiResponse(data);
+    } catch {
+      //console.error('Error after placing piece');
+    } finally {
+      setLoading(false);
+    }
+
+    if (matchingMove) {
+      console.log("MOVE:", matchingMove);
+    } else {
+      console.error("No matching move found");
+    }
+  };
+
+  // ============================================================================
+  // Board and Piece Handlers - Shared between modes
+  // ============================================================================
+
+  const handleBoardClick = async (square: number) => {
+    if (gameState.mode === "analysis") {
+      // Analysis mode: place or clear pieces
+      const pieceAtSquare = gameState.board[square].piece;
+
+      if (pieceAtSquare != null) {
+        // Square is occupied - clear it
+        const newBoard = gameState.board.map((cell, index) =>
+          index === square ? { piece: undefined, highlighted: false } : cell,
+        );
+
+        const newTray = gameState.tray.map((trayPiece, index) =>
+          index === pieceAtSquare
+            ? { available: true, border: false }
+            : trayPiece,
+        );
+
+        dispatch({
+          type: "SET_BOARD_AND_TRAY",
+          board: newBoard,
+          tray: newTray,
+        });
+      } else if (selectedPieceFromTray !== undefined) {
+        // Square is empty and we have a piece selected - place it
+        const newBoard = gameState.board.map((cell, index) =>
+          index === square
+            ? { piece: selectedPieceFromTray, highlighted: false }
+            : cell,
+        );
+
+        const newTray = gameState.tray.map((trayPiece, index) =>
+          index === selectedPieceFromTray
+            ? { available: false, border: false }
+            : trayPiece,
+        );
+
+        dispatch({
+          type: "SET_BOARD_AND_TRAY",
+          board: newBoard,
+          tray: newTray,
+        });
+        setSelectedPieceFromTray(undefined);
+      }
+      return;
+    }
+
+    // Play mode logic
+    dispatch({ type: "PLACE_PIECE", square });
+  };
+
+  // ============================================================================
+  // Analysis Mode Handlers
+  // ============================================================================
+
+  const handleLeftPanelPieceClick = () => {
+    if (gameState.mode === "analysis") {
+      if (gameState.pieceToPlace !== undefined) {
+        // Clear the piece to place
+        const newTray = gameState.tray.map((trayPiece, index) =>
+          index === gameState.pieceToPlace
+            ? { available: true, border: false }
+            : trayPiece,
+        );
+        dispatch({
+          type: "SET_BOARD_AND_TRAY",
+          board: gameState.board,
+          tray: newTray,
+        });
+        dispatch({ type: "SET_PIECE_TO_PLACE", pieceId: undefined });
+      } else if (selectedPieceFromTray !== undefined) {
+        // Place selected piece in left panel
+        const newTray = gameState.tray.map((trayPiece, index) =>
+          index === selectedPieceFromTray
+            ? { available: false, border: false }
+            : trayPiece,
+        );
+        dispatch({
+          type: "SET_BOARD_AND_TRAY",
+          board: gameState.board,
+          tray: newTray,
+        });
+        dispatch({
+          type: "SET_PIECE_TO_PLACE",
+          pieceId: selectedPieceFromTray,
+        });
+        setSelectedPieceFromTray(undefined);
+      }
+    }
+  };
+
+  const handleReturnToTitle = () => {
+    dispatch({ type: "RESET" });
+  };
+
+  return (
+    <div className="h-screen bg-gray-100 flex flex-col">
+      <Header />
+      <main
+        className="flex-1 flex items-center justify-center overflow-hidden gap-[2vw]"
+        style={{
+          paddingLeft: "2vw",
+          paddingRight: "2vw",
+          paddingTop: "1.5vw",
+          paddingBottom: "1.5vw",
+        }}
+      >
+        {/* Left Panel */}
+        <div
+          className={
+            gameState.mode !== "landing"
+              ? "bg-white rounded-lg shadow-md p-6 flex flex-col gap-4"
+              : ""
+          }
+          style={{
+            width: "20vw",
+            height: "min(50vw, calc(100vh - 7rem - 3vw))",
+          }}
+        >
+          {gameState.mode !== "landing" && (
+            <>
+              {/* Tabs */}
+              <div className="flex border-b border-gray-300 mb-4">
+                <button
+                  onClick={() => setActiveTab("overview")}
+                  className={`flex-1 px-4 py-2 text-sm font-medium ${
+                    activeTab === "overview"
+                      ? "text-gray-900 border-b-2 border-gray-900"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  Overview
+                </button>
+                {gameState.mode === "play" && (
+                  <button
+                    onClick={() => setActiveTab("history")}
+                    className={`flex-1 px-4 py-2 text-sm font-medium ${
+                      activeTab === "history"
+                        ? "text-gray-900 border-b-2 border-gray-900"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
+                  >
+                    History
+                  </button>
+                )}
+                <button
+                  onClick={() => setActiveTab("analysis")}
+                  className={`flex-1 px-4 py-2 text-sm font-medium ${
+                    activeTab === "analysis"
+                      ? "text-gray-900 border-b-2 border-gray-900"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  Analysis
+                </button>
+              </div>
+
+              {/* Tab Content */}
+              {activeTab === "overview" && (
+                <>
+                  {gameState.mode === "play" ? (
+                    <>
+                      {/* Notification Area - takes all space up to the line */}
+                      <div className="flex-1 mb-6 flex items-center justify-center">
+                        <div className="space-y-3 text-center">
+                          {/* Game Over States */}
+                          {gameState.outcome === "player_win" && (
+                            <>
+                              <p className="text-5xl font-bold text-gray-900">
+                                Quarto!
+                              </p>
+                              <p className="text-3xl font-bold text-gray-900">
+                                Player Wins
+                              </p>
+                            </>
+                          )}
+                          {gameState.outcome === "engine_win" && (
+                            <>
+                              <p className="text-5xl font-bold text-gray-900">
+                                Quarto!
+                              </p>
+                              <p className="text-3xl font-bold text-gray-900">
+                                Engine Wins
+                              </p>
+                            </>
+                          )}
+                          {gameState.outcome === "draw" && (
+                            <>
+                              <p className="text-5xl font-bold text-gray-900">
+                                Draw
+                              </p>
+                            </>
+                          )}
+
+                          {/* During Gameplay */}
+                          {!gameState.outcome && (
+                            <>
+                              {!gameState.isBoardLocked ? (
+                                <p className="text-4xl font-bold text-gray-800">
+                                  Place Piece
+                                </p>
+                              ) : !gameState.isRightPanelLocked ? (
+                                <p className="text-4xl font-bold text-gray-800">
+                                  Select Piece
+                                </p>
+                              ) : null}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Analysis Mode - Notification Area and Piece Display */}
+                      <div className="flex-1 mb-6 flex flex-col">
+                        {/* Notification Area */}
+                        <div className="flex-1 flex items-center justify-center">
+                          <div className="space-y-3 text-center">
+                            <p className="text-4xl font-bold text-gray-800">
+                              Edit Board
+                            </p>
+                            <p className="text-lg text-gray-600 px-4">
+                              Place pieces on the board and select a piece to
+                              analyze
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Divider */}
+                        <hr className="border-gray-300 mb-4" />
+
+                        {/* Piece to Place Display */}
+                        {gameState.pieceToPlace !== undefined ? (
+                          <div
+                            className="flex items-center justify-center py-4 cursor-pointer"
+                            onClick={handleLeftPanelPieceClick}
+                          >
+                            <PieceInHandDisplay
+                              pieceId={gameState.pieceToPlace}
+                            />
+                          </div>
+                        ) : selectedPieceFromTray !== undefined ? (
+                          <div
+                            className="flex items-center justify-center py-4 cursor-pointer"
+                            onClick={handleLeftPanelPieceClick}
+                          >
+                            <div
+                              className="bg-gray-50 border-2 border-dashed border-gray-400 flex items-center justify-center"
+                              style={{
+                                width:
+                                  "calc(min(50vw, calc(100vh - 7rem - 3vw)) / 4)",
+                                height:
+                                  "calc(min(50vw, calc(100vh - 7rem - 3vw)) / 4)",
+                              }}
+                            >
+                              <p className="text-gray-500 text-sm text-center px-2">
+                                Click to place here
+                              </p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center py-4">
+                            <div
+                              className="bg-gray-50 border-2 border-gray-300 flex items-center justify-center"
+                              style={{
+                                width:
+                                  "calc(min(50vw, calc(100vh - 7rem - 3vw)) / 4)",
+                                height:
+                                  "calc(min(50vw, calc(100vh - 7rem - 3vw)) / 4)",
+                              }}
+                            ></div>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+
+              {activeTab === "history" && (
+                <div className="flex-1 mb-6 overflow-y-auto space-y-2">
+                  {gameState.moveHistory.map((move, index) => (
+                    <div key={index} className="flex gap-2 text-sm">
+                      <span className="font-medium text-gray-700 min-w-[2rem]">
+                        {index + 1}.
+                      </span>
+                      <span className="text-gray-600">{move}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {activeTab === "analysis" && (
+                <div className="flex-1 mb-6 overflow-y-auto">
+                  {gameState.analysisData ? (
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <pre className="text-xs font-mono text-gray-800 whitespace-pre-wrap break-words overflow-x-auto">
+                        {JSON.stringify(gameState.analysisData, null, 2)}
+                      </pre>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <p className="text-gray-500 text-sm text-center">
+                        No analysis data available.
+                        <br />
+                        Make a move to see analysis.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === "overview" && (
+                <>
+                  <hr className="border-gray-300 mb-6" />
+
+                  {gameState.mode === "play" && (
+                    <>
+                      {/* Play Again Options - Conditional */}
+                      {gameState.outcome ? (
+                        <div className="border-2 border-gray-300 rounded-lg p-4 bg-white mb-6">
+                          <h3 className="text-sm font-semibold text-gray-900 mb-2 text-center">
+                            Play Again
+                          </h3>
+                          <div className="flex flex-col gap-2">
+                            <button
+                              onClick={() => {
+                                dispatch({ type: "RESET" });
+                                startGame("first");
+                              }}
+                              className="w-full px-6 py-3 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
+                            >
+                              Player Moves First
+                            </button>
+                            <button
+                              onClick={() => {
+                                dispatch({ type: "RESET" });
+                                startGame("second");
+                              }}
+                              className="w-full px-6 py-3 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
+                            >
+                              Player Moves Second
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mb-6" style={{ height: "152px" }}></div>
+                      )}
+
+                      {/* Engine Strength */}
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Engine Strength: {gameState.engineStrength}
+                        </label>
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={gameState.engineStrength}
+                          onChange={(e) =>
+                            dispatch({
+                              type: "SET_STRENGTH",
+                              strength: Number(e.target.value),
+                            })
+                          }
+                          className="w-full accent-gray-700"
+                        />
+                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                          <span>Random</span>
+                          <span>Perfect</span>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {gameState.mode === "analysis" && (
+                    <>
+                      {/* Analyze Button */}
+                      <button
+                        onClick={() => console.log("Analyze position")}
+                        className="w-full px-4 py-2 mb-4 bg-gray-700 text-white rounded font-medium hover:bg-gray-800 transition-colors"
+                      >
+                        Analyze Position
+                      </button>
+                    </>
+                  )}
+
+                  {/* Return to Title */}
+                  <button
+                    onClick={handleReturnToTitle}
+                    className="w-full px-4 py-2 bg-gray-600 text-white rounded font-medium hover:bg-gray-700 transition-colors"
+                  >
+                    Return to Title Screen
+                  </button>
+                </>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Center Panel (Square) */}
+        <div
+          className="flex items-center justify-center"
+          style={{
+            width: "min(50vw, calc(100vh - 7rem - 3vw))",
+            height: "min(50vw, calc(100vh - 7rem - 3vw))",
+          }}
+        >
+          {gameState.mode === "landing" ? (
+            <LandingPage
+              onSelectMode={startGame}
+              onOpenEditor={() => dispatch({ type: "START_ANALYSIS_MODE" })}
+            />
+          ) : (
+            <GameBoard
+              cells={gameState.board}
+              enableHover={
+                //gameState.mode === "analysis" || !gameState.isBoardLocked
+                !gameState.isBoardLocked
+              }
+              loading={loading}
+              onCellClick={handleBoardClick}
+            />
+          )}
+        </div>
+
+        {/* Right Panel */}
+        <div
+          className={
+            gameState.mode !== "landing"
+              ? gameState.mode === "analysis" || gameState.isRightPanelTray
+                ? "bg-white rounded-lg shadow-md p-6"
+                : "bg-white rounded-lg shadow-md flex items-center justify-center"
+              : ""
+          }
+          style={{
+            width: "20vw",
+            height: "min(50vw, calc(100vh - 7rem - 3vw))",
+          }}
+        >
+          {gameState.mode !== "landing" &&
+            (gameState.mode === "analysis" || gameState.isRightPanelTray ? (
+              <PieceTray
+                enabled={!gameState.isRightPanelLocked}
+                pieces={gameState.tray}
+                onPieceClick={handlePieceClick}
+              />
+            ) : (
+              <PieceInHandDisplay pieceId={gameState.pieceToPlace ?? 0} />
+            ))}
+        </div>
+      </main>
+    </div>
+  );
+}

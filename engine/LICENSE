@@ -1,0 +1,40 @@
+Quarto Solver License (QSL) v1.0
+Copyright (c) 2025 Jonathan Roth
+
+1. Definitions.
+   "Software" means the source code and binaries in this repository.
+
+2. Grant for Non-Commercial Use.
+   You are granted a worldwide, royalty-free, non-exclusive, non-transferable license
+   to use, copy, modify, and distribute the Software for **non-commercial purposes**,
+   provided that you (a) include this license text in all copies and substantial portions,
+   and (b) provide appropriate attribution to the original author.
+
+3. Commercial Use Requires Permission.
+   Any use of the Software, or Derivative Works thereof, **for commercial purposes**
+   (including internal use that contributes to a revenue-generating activity) requires
+   a **separate paid commercial license** from the copyright holder. 
+   To obtain one, contact: jonathanroth@protonmail.com
+
+4. No Sublicensing for Commercial Use.
+   You may not sublicense the Software for commercial purposes without an executed
+   commercial agreement.
+
+5. Patents.
+   This license does not grant any patent licenses. A commercial license may include
+   appropriate patent grants if necessary.
+
+6. No Warranty.
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+   INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+   PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+   FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+   ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+7. Termination.
+   This license terminates automatically upon any material breach. Sections 3–6 survive termination.
+
+8. Compatibility.
+   This license is **not** an OSI-approved open source license. If you need OSI compliance,
+   please negotiate a commercial or dual license.
+
