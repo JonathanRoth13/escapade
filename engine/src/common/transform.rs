@@ -13,7 +13,6 @@ pub enum Transformation {
 }
 
 impl Transformation {
-    /// Returns the index into the PERMUTATIONS array for this transformation
     #[inline(always)]
     pub fn index(self) -> usize {
         match self {
@@ -27,17 +26,6 @@ impl Transformation {
             Transformation::ReflectDiagonalAnti => 7,
         }
     }
-
-    pub const ALL: [Transformation; 8] = [
-        Transformation::Identity,
-        Transformation::Rotate90,
-        Transformation::Rotate180,
-        Transformation::Rotate270,
-        Transformation::ReflectHorizontal,
-        Transformation::ReflectVertical,
-        Transformation::ReflectDiagonalMain,
-        Transformation::ReflectDiagonalAnti,
-    ];
 }
 
 const PERMUTATIONS: [[u8; 16]; 8] = [
@@ -81,12 +69,6 @@ fn apply_permutation_u16(x: u16, perm: &[u8; 16]) -> u16 {
     y
 }
 
-/// Apply a D₄ transform to a single 16-bit plane
-#[inline(always)]
-pub fn apply_u16(x: u16, t: Transformation) -> u16 {
-    apply_permutation_u16(x, &PERMUTATIONS[t.index()])
-}
-
 /// Apply a D₄ transform to a `Board` (position and the 4 attribute planes)
 #[inline(always)]
 pub fn apply(board: &Board, t: Transformation) -> Board {
@@ -100,16 +82,4 @@ pub fn apply(board: &Board, t: Transformation) -> Board {
             apply_permutation_u16(board.attribute_masks[3], perm),
         ],
     }
-}
-
-/// Check if an occupancy pattern is canonical under D₄ symmetry
-pub fn is_canonical_occupancy(occupancy: u16) -> bool {
-    for &t in Transformation::ALL.iter().skip(1) {
-        let perm = &PERMUTATIONS[t.index()];
-        let transformed = apply_permutation_u16(occupancy, perm);
-        if transformed < occupancy {
-            return false;
-        }
-    }
-    true
 }

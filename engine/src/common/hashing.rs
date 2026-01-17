@@ -8,7 +8,7 @@ use xxhash_rust::xxh3::xxh3_64_with_seed;
 
 use crate::common::Ply;
 
-/// Hash for shard selection (STABLE - upper bits determine shard_id)
+/// Hash for shard selection
 pub fn hash_shard_ply(ply: &Ply) -> u64 {
     xxh3_64_with_seed(&ply.to_bytes(), DOMAIN_SHARD)
 }

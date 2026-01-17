@@ -94,22 +94,18 @@ pub fn canonicalize_ply(ply: &Ply) -> Ply {
         return LAYER_1_CANONICAL;
     }
 
-    // Look up precomputed transformations that produce the canonical occupancy
     let transformations = CANONICAL_TRANSFORMATIONS[ply.board.occupancy as usize];
 
     let mut best_ply = *ply;
     for &t in transformations {
-        // Apply transformation to the board
         let transformed_board = apply(&ply.board, t);
         let transformed_ply = Ply {
             board: transformed_board,
             piece_to_place: ply.piece_to_place,
         };
 
-        // Apply attribute relabeling
         let canonical_candidate = apply_attribute_relabeling(&transformed_ply);
 
-        // Keep the lexicographically smallest
         if canonical_candidate < best_ply {
             best_ply = canonical_candidate;
         }
@@ -117,72 +113,3 @@ pub fn canonicalize_ply(ply: &Ply) -> Ply {
 
     best_ply
 }
-
-/*
-/// Helper function to canonicalize only the attribute masks of a board
-/// (orients each attribute mask and sorts them in descending order)
-#[inline(always)]
-fn canonicalize_board_attributes(board: &Board) -> Board {
-    debug_assert!(board.occupancy != 0);
-
-    let mut oriented_masks = [0u16; 4];
-
-    // Orient each attribute mask
-    for (oriented, &mask) in oriented_masks.iter_mut().zip(board.attribute_masks.iter()) {
-        let inverted = board.occupancy ^ mask;
-        *oriented = if inverted < mask { inverted } else { mask };
-    }
-
-    // Sort attribute masks in descending order
-    let mut indices = [0, 1, 2, 3];
-    indices.sort_by_key(|&i| (oriented_masks[i], i));
-
-    let mut sorted_masks = [0u16; 4];
-    for i in 0..4 {
-        sorted_masks[i] = oriented_masks[indices[3 - i]];
-    }
-
-    Board {
-        occupancy: board.occupancy,
-        attribute_masks: sorted_masks,
-    }
-}
-*/
-
-/*
-/// Canonicalize a board by D₄ transformations only (no attribute relabeling)
-#[inline(always)]
-pub fn canonicalize_board_geometric_transformation_only(board: &Board) -> Board {
-    let mut best: Board = *board;
-    for &t in Transformation::ALL.iter().skip(1) {
-        let b = apply(board, t);
-        if b < best {
-            best = b;
-        }
-    }
-    best
-}
-*/
-
-/*
-/// Canonicalize a board by applying both D₄ transformations and attribute relabeling
-/// This is the full canonicalization for Board (without piece_to_place)
-#[inline(always)]
-pub fn canonicalize_board(board: &Board) -> Board {
-    let mut best: Board = *board;
-
-    // Try all D₄ transformations
-    for &t in Transformation::ALL.iter() {
-        let transformed = apply(board, t);
-
-        // Apply attribute relabeling to the transformed board
-        let canonicalized = canonicalize_board_attributes(&transformed);
-
-        if canonicalized < best {
-            best = canonicalized;
-        }
-    }
-
-    best
-}
-*/

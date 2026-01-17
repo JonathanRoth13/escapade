@@ -43,7 +43,7 @@ impl std::fmt::Display for ValidationError {
 
 impl std::error::Error for ValidationError {}
 
-/// Check if a board has multiple quartos that share at least one common cell
+/// Check if a board has multiple quartos that dont share a common cell
 fn check_quarto_intersection(board: &Board) -> (bool, bool) {
     let mut there_exists_at_least_one_quarto = false;
     let mut intersection_mask: u16 = 0;

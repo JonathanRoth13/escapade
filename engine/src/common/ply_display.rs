@@ -5,18 +5,12 @@ use anyhow::{Result, anyhow};
 /// Supports two formats:
 /// 1. 22-character hex string: "0123456789abcdef01234" (11 bytes as hex, no spaces)
 /// 2. Grid format (17 chars): "0123456789abcde f" (16 squares + piece_to_place)
-///    - First 16 chars: 0-F for piece at that square, space for empty
-///    - 17th char: piece_to_place (0-F)
 pub fn parse_ply(s: &str) -> Result<Ply> {
-    // Check for grid format first (exactly 17 chars, spaces are significant)
     if s.len() == 17 {
-        // Format 2: Grid format
         parse_ply_grid(s)
     } else {
-        // Try binary format after trimming whitespace
         let trimmed = s.trim();
         if trimmed.len() == 22 {
-            // Format 1: 22 hex chars (11 bytes)
             parse_ply_hex(trimmed)
         } else {
             Err(anyhow!(
@@ -40,7 +34,6 @@ fn parse_ply_hex(s: &str) -> Result<Ply> {
             .map_err(|_| anyhow!("Invalid hex byte: {}", hex_byte))?;
     }
 
-    // Parse using Record format
     let occupancy = u16::from_be_bytes([bytes[0], bytes[1]]);
     let a3 = u16::from_be_bytes([bytes[2], bytes[3]]);
     let a2 = u16::from_be_bytes([bytes[4], bytes[5]]);
@@ -58,11 +51,9 @@ fn parse_ply_hex(s: &str) -> Result<Ply> {
 }
 
 /// Parse from grid format: 16 squares + piece_to_place
-/// Example: "0  12 3 4       f" (pieces at positions 0,3,4,5,6,9, piece_to_place=f)
 fn parse_ply_grid(s: &str) -> Result<Ply> {
     use crate::common::{LINE_MASKS, check_line_mask};
 
-    // Must be exactly 17 characters (may have leading/trailing whitespace from trim, but body must be 17)
     let chars: Vec<char> = s.chars().collect();
 
     if chars.len() != 17 {
@@ -80,13 +71,11 @@ fn parse_ply_grid(s: &str) -> Result<Ply> {
     // Parse first 16 characters (the grid)
     for (pos, &ch) in chars[0..16].iter().enumerate() {
         if ch == ' ' {
-            // Empty square
             continue;
         }
 
         empty_grid = false;
 
-        // Parse piece ID (0-F)
         let piece_id = ch.to_digit(16).ok_or_else(|| {
             anyhow!(
                 "Invalid piece at position {}: '{}' (must be 0-F or space)",
@@ -95,19 +84,9 @@ fn parse_ply_grid(s: &str) -> Result<Ply> {
             )
         })? as u8;
 
-        if piece_id > 15 {
-            return Err(anyhow!(
-                "Piece ID must be 0-15, got {} at position {}",
-                piece_id,
-                pos
-            ));
-        }
-
-        // Set occupancy bit
         let bit = 1u16 << pos;
         occupancy |= bit;
 
-        // Set attribute mask bits based on piece ID
         for (attr, mask) in attribute_masks.iter_mut().enumerate() {
             if (piece_id & (1 << attr)) != 0 {
                 *mask |= bit;
@@ -115,7 +94,6 @@ fn parse_ply_grid(s: &str) -> Result<Ply> {
         }
     }
 
-    // Check if the board is terminal (has a quarto)
     let board = Board {
         occupancy,
         attribute_masks,
@@ -126,10 +104,9 @@ fn parse_ply_grid(s: &str) -> Result<Ply> {
         if empty_grid {
             return Ok(LAYER_0_SENTINEL);
         } else if has_quarto {
-            // Terminal position with quarto - piece_to_place should be 0 (or some sentinel)
             return Ok(Ply {
                 board,
-                piece_to_place: 0, // Dummy value for terminal positions
+                piece_to_place: 0,
             });
         } else {
             return Err(anyhow!(
@@ -167,11 +144,9 @@ pub fn format_ply(ply: &Ply) -> String {
 
     let mut result = String::with_capacity(17);
 
-    // First 16 characters: the grid
     for pos in 0..16 {
         let bit = 1u16 << pos;
         if (ply.board.occupancy & bit) != 0 {
-            // Extract piece ID from attribute masks
             let mut piece_id = 0u8;
             for (i, &mask) in ply.board.attribute_masks.iter().enumerate() {
                 if (mask & bit) != 0 {
@@ -184,7 +159,6 @@ pub fn format_ply(ply: &Ply) -> String {
         }
     }
 
-    // 17th character: piece_to_place
     result.push_str(&format!("{:X}", ply.piece_to_place));
 
     result
@@ -199,60 +173,6 @@ pub fn format_ply_hex(ply: &Ply) -> String {
         ply.board.attribute_masks[2],
         ply.board.attribute_masks[1],
         ply.board.attribute_masks[0],
-        ply.piece_to_place << 4 // Upper 4 bits
+        ply.piece_to_place << 4
     )
-}
-
-/// Pretty print a ply showing the board and piece to place
-pub fn pretty_print_ply(ply: &Ply) -> String {
-    let mut output = String::new();
-
-    // Build cells array with piece IDs
-    let mut cells = [' '; 16];
-    for (pos, cell) in cells.iter_mut().enumerate() {
-        let bit = 1u16 << pos;
-        if (ply.board.occupancy & bit) != 0 {
-            // Extract piece ID from attribute masks
-            let mut piece_id = 0u8;
-            for (i, &mask) in ply.board.attribute_masks.iter().enumerate() {
-                if (mask & bit) != 0 {
-                    piece_id |= 1 << i;
-                }
-            }
-            *cell = char::from_digit(piece_id as u32, 16)
-                .unwrap()
-                .to_ascii_uppercase();
-        }
-    }
-
-    // Print board using same format as lab generate code
-    output.push_str("┏━━━┯━━━┯━━━┯━━━┓\n");
-    output.push_str(&format!(
-        "┃ {} │ {} │ {} │ {} ┃\n",
-        cells[12], cells[13], cells[14], cells[15]
-    ));
-    output.push_str("┠───┼───┼───┼───┨\n");
-    output.push_str(&format!(
-        "┃ {} │ {} │ {} │ {} ┃\n",
-        cells[8], cells[9], cells[10], cells[11]
-    ));
-    output.push_str("┠───┼───┼───┼───┨\n");
-    output.push_str(&format!(
-        "┃ {} │ {} │ {} │ {} ┃\n",
-        cells[4], cells[5], cells[6], cells[7]
-    ));
-    output.push_str("┠───┼───┼───┼───┨   ┏━━━┓\n");
-    output.push_str(&format!(
-        "┃ {} │ {} │ {} │ {} ┃   ┃ {:X} ┃\n",
-        cells[0], cells[1], cells[2], cells[3], ply.piece_to_place
-    ));
-    output.push_str("┗━━━┷━━━┷━━━┷━━━┛   ┗━━━┛\n");
-
-    //output.push_str(&format!("Piece to place: {:x}\n", ply.piece_to_place));
-    //output.push_str(&format!(
-    //    "Layer: {} (occupancy count)\n",
-    //    ply.board.occupancy.count_ones()
-    //));
-
-    output
 }

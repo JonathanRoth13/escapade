@@ -106,8 +106,7 @@ impl From<&[u8]> for Ply {
     }
 }
 
-/// Layer 0 sentinel value (all bits set to 1).
-/// Used to represent the root position (empty board) in tablebases.
+/// Used to represent the root position.
 pub const LAYER_0_SENTINEL: Ply = Ply {
     board: Board {
         occupancy: 0xFFFF,
@@ -116,6 +115,7 @@ pub const LAYER_0_SENTINEL: Ply = Ply {
     piece_to_place: 0xFF,
 };
 
+/// The only canonical move in layer 1
 pub const LAYER_1_CANONICAL: Ply = Ply {
     board: Board {
         occupancy: 0,

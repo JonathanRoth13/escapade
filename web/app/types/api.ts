@@ -12,7 +12,7 @@ import type { AnalysisResult } from "./engine";
 // ============================================================================
 
 /**
- * GET /api/engine
+ * GET /api/play
  *
  * Query Parameters:
  * - ply: string - The current game position in ply format (17 chars: 16 board + 1 piece)

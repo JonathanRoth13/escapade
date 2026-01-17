@@ -64,92 +64,22 @@ pub fn sort_orbits(orbits: &mut [Orbit], is_second_player: bool) {
     });
 }
 
-fn number_to_word(n: usize) -> &'static str {
-    match n {
-        1 => "one",
-        2 => "two",
-        3 => "three",
-        4 => "four",
-        5 => "five",
-        6 => "six",
-        7 => "seven",
-        8 => "eight",
-        9 => "nine",
-        10 => "ten",
-        11 => "eleven",
-        12 => "twelve",
-        13 => "thirteen",
-        14 => "fourteen",
-        15 => "fifteen",
-        16 => "sixteen",
-        17 => "seventeen",
-        _ => unreachable!(),
-    }
-}
-
-pub fn format_outcome(outcome: u8, is_player_first: bool, current_layer: usize) -> String {
-    if outcome == 15 {
-        return "The game ends in a draw.".to_string();
-    }
-
-    let first_player_wins = outcome % 2 == 1;
-
-    let player_wins = if is_player_first {
-        first_player_wins
-    } else {
-        !first_player_wins
-    };
-
-    let winner = if player_wins { "player" } else { "opponent" };
-
-    let layer_that_the_game_ends_on = 18 - outcome as usize;
-
-    let moves_remaining = layer_that_the_game_ends_on - (current_layer + 1);
-
-    if moves_remaining == 0 {
-        return format!("The {} wins.", winner);
-    }
-
-    let move_word = if moves_remaining == 1 {
-        "move"
-    } else {
-        "moves"
-    };
-
-    format!(
-        "The {} wins in {} {}, on move {}.",
-        winner,
-        number_to_word(moves_remaining),
-        move_word,
-        layer_that_the_game_ends_on
-    )
-}
-
 pub fn analyze(ply: &Ply, tablebase: Option<&TablebaseIndex>) -> String {
-    // Calculate layer
     let layer = if *ply == LAYER_0_SENTINEL {
         0
     } else {
         ply.board.occupancy.count_ones() as usize + 1
     };
 
-    // Always from current player's perspective
     let is_player_first: bool = layer % 2 == 0;
-    let is_players_turn: bool = true;
 
-    // Format input ply
     let ply_grid = format_ply(ply);
     let ply_hex = format_ply_hex(ply);
 
-    // Canonicalize and format
     let canonical_ply = canonicalize_ply(ply);
-    let canon_grid = format_ply(&canonical_ply);
     let canon_hex = format_ply_hex(&canonical_ply);
 
-
-
     if layer > 4 {
-        // Check if this is a terminal position (skip for LAYER_0_SENTINEL)
         let mut quarto: Vec<Quarto> = Vec::with_capacity(3);
 
         for mask in &LINE_MASKS {
@@ -182,18 +112,15 @@ pub fn analyze(ply: &Ply, tablebase: Option<&TablebaseIndex>) -> String {
         _ => get_moves_general(ply, tablebase, layer),
     };
 
-    // Convert move_candidates to orbits by grouping by canonical_ply
     let mut orbits = Vec::new();
     let mut processed = Vec::new();
 
     for candidate in &move_candidates {
-        // Skip if we've already processed this canonical ply
         if processed.contains(&candidate.canonical_ply) {
             continue;
         }
         processed.push(candidate.canonical_ply);
 
-        // Collect all candidates with this canonical ply and sort by resulting_ply
         let mut candidates_in_orbit: Vec<&MoveCandidate> = move_candidates
             .iter()
             .filter(|c| c.canonical_ply == candidate.canonical_ply)
@@ -203,28 +130,17 @@ pub fn analyze(ply: &Ply, tablebase: Option<&TablebaseIndex>) -> String {
 
         let moves: Vec<Move> = candidates_in_orbit
             .iter()
-            .map(|c| {
-                // Determine whose turn it is from perspective
-                let actor = if is_players_turn {
-                    "player"
-                } else {
-                    "opponent"
-                };
-
-                Move {
-                    square: c.square,
-                    piece: c.piece,
-                    hex: format_ply_hex(&c.resulting_ply),
-                    quarto: c.quartos.clone(),
-                }
+            .map(|c| Move {
+                square: c.square,
+                piece: c.piece,
+                hex: format_ply_hex(&c.resulting_ply),
+                quarto: c.quartos.clone(),
             })
             .collect();
 
         let canon_hex = format_ply_hex(&candidate.canonical_ply);
 
-        // Check if this is a terminal position (has quarto)
         let outcome = if candidate.quartos.is_some() {
-            // Terminal position: game ends after this move
             (17 - layer) as u8
         } else {
             evaluate(&candidate.canonical_ply, tablebase)
@@ -237,7 +153,6 @@ pub fn analyze(ply: &Ply, tablebase: Option<&TablebaseIndex>) -> String {
         });
     }
 
-    // Sort orbits before returning
     sort_orbits(&mut orbits, is_player_first);
 
     let result = AnalysisResult {
@@ -276,13 +191,12 @@ fn get_moves_layer_0() -> Vec<MoveCandidate> {
     moves
 }
 
-fn get_moves_general(ply: &Ply, _tablebase: Option<&TablebaseIndex>,layer:usize) -> Vec<MoveCandidate> {
+fn get_moves_general(ply: &Ply, _tablebase: Option<&TablebaseIndex>, layer: usize) -> Vec<MoveCandidate> {
     let mut moves = Vec::with_capacity(16 * 16);
     let mut empty_squares_mask = !ply.board.occupancy;
     let mut non_terminal_boards = Vec::with_capacity(16);
     let available_pieces_mask = compute_unused_pieces_mask(ply);
 
-    // Phase 1: Try placing piece_to_place on each empty square
     'next_square: while empty_squares_mask != 0 {
         let square_mask = lowest_bit(empty_squares_mask);
         let square_index = square_mask.trailing_zeros() as u8;
@@ -306,7 +220,7 @@ fn get_moves_general(ply: &Ply, _tablebase: Option<&TablebaseIndex>,layer:usize)
             }
         }
 
-        if !quartos.is_empty() {
+        if !quartos.is_empty() || layer == 16 {
             let terminal_ply = Ply {
                 board: board_after_placement,
                 piece_to_place: 0,
@@ -315,38 +229,19 @@ fn get_moves_general(ply: &Ply, _tablebase: Option<&TablebaseIndex>,layer:usize)
             moves.push(MoveCandidate {
                 square: Some(square_index),
                 piece: None,
-                quartos: Some(quartos),
+                quartos: if quartos.is_empty() { None } else { Some(quartos) },
                 resulting_ply: terminal_ply,
                 canonical_ply,
             });
             continue 'next_square;
         }
 
-        // claude, when you get the chance, combine this with the above logic block
-        if layer == 16 {
-            let terminal_ply = Ply {
-                board: board_after_placement,
-                piece_to_place: 0,
-            };
-            let canonical_ply = canonicalize_ply(&terminal_ply);
-            moves.push(MoveCandidate {
-                square: Some(square_index),
-                piece: None,
-                quartos: None,
-                resulting_ply: terminal_ply,
-                canonical_ply,
-            });
-            continue 'next_square;
-        }
-
-        // Non-terminal position - save for phase 2
         non_terminal_boards.push(IntermediateBoard {
             board: board_after_placement,
             square_placed: square_index,
         });
     }
 
-    // Phase 2: For non-terminal boards, pair with each available piece
     let mut remaining_pieces_mask = available_pieces_mask;
     while remaining_pieces_mask != 0 {
         let piece_mask = lowest_bit(remaining_pieces_mask);
@@ -388,28 +283,17 @@ fn extract_square_indices(line_mask: u16) -> [u8; 4] {
     squares
 }
 
-fn get_quarto_description(intersection: &[u8; 4], attribute: &String) -> String {
-    format!(
-        "The pieces on squares {}, {}, {} and {} are all {}.",
-        intersection[0], intersection[1], intersection[2], intersection[3], attribute
-    )
-    .to_string()
-}
-
 fn get_quarto_attribute(board: &Board, line_mask: u16) -> Vec<String> {
     // Bit encoding:
     // bit 0 (value 1): Hollow (1) vs Solid (0)
     // bit 1 (value 2): Short (1) vs Tall (0)
     // bit 2 (value 4): Square (1) vs Round (0)
     // bit 3 (value 8): Dark (1) vs Light (0)
-
     let mut attributes = Vec::new();
 
     for attr in 0..4 {
         let attr_mask = board.attribute_masks[attr];
-        // Check if all 4 pieces have the same value for this attribute
         if (attr_mask & line_mask) == line_mask {
-            // All pieces have this bit set
             attributes.push(match attr {
                 0 => "hollow".to_string(),
                 1 => "short".to_string(),
@@ -418,7 +302,6 @@ fn get_quarto_attribute(board: &Board, line_mask: u16) -> Vec<String> {
                 _ => unreachable!(),
             });
         } else if (attr_mask & line_mask) == 0 {
-            // All pieces have this bit unset
             attributes.push(match attr {
                 0 => "solid".to_string(),
                 1 => "tall".to_string(),

@@ -11,9 +11,7 @@ export default function Header() {
           style={{ width: "min(50vw, calc(100vh - 7rem - 3vw))" }}
         >
           <h1 className="text-4xl font-bold text-gray-900">ESCAPADE</h1>
-          <p className="text-base text-gray-600">
-            An engine for Quarto written by Jonathan Roth
-          </p>
+          <p className="text-base text-gray-600">An engine for Quarto</p>
         </div>
         <div style={{ width: "20vw" }}></div>
       </div>

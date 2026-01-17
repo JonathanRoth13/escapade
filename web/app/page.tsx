@@ -40,7 +40,7 @@ export default function Home() {
     setLoading(true);
     try {
       const response = await fetch(
-        `/api/engine?ply=${encodeURIComponent(EMPTY_BOARD_PLY)}&strength=${gameState.engineStrength}`,
+        `/api/play?ply=${encodeURIComponent(EMPTY_BOARD_PLY)}&strength=${gameState.engineStrength}`,
       );
       const data = await response.json();
 
@@ -213,7 +213,7 @@ export default function Home() {
     setLoading(true);
     try {
       const response = await fetch(
-        `/api/engine?ply=${encodeURIComponent(matchingMove.hex)}&strength=${gameState.engineStrength}`,
+        `/api/play?ply=${encodeURIComponent(matchingMove.hex)}&strength=${gameState.engineStrength}`,
       );
       const data = await response.json();
       handleApiResponse(data);
@@ -642,10 +642,7 @@ export default function Home() {
           }}
         >
           {gameState.mode === "landing" ? (
-            <LandingPage
-              onSelectMode={startGame}
-              onOpenEditor={() => dispatch({ type: "START_ANALYSIS_MODE" })}
-            />
+            <LandingPage onSelectMode={startGame} />
           ) : (
             <GameBoard
               cells={gameState.board}

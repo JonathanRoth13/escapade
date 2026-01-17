@@ -22,7 +22,6 @@ impl Record {
 
         // Pack piece_to_place (upper 4 bits) and outcome (lower 4 bits) into one byte
         let packed = (self.ply.piece_to_place << 4) | (self.outcome & 0x0F);
-
         [
             p[0], p[1], a3[0], a3[1], a2[0], a2[1], a1[0], a1[1], a0[0], a0[1], packed,
         ]
@@ -53,12 +52,6 @@ impl Record {
     }
 
     /// Deserialize a Record from a byte slice.
-    ///
-    /// This function accepts a variable-length slice and validates it's exactly 11 bytes.
-    /// For fixed-size arrays, use `from_bytes()` or the `From<[u8; 11]>` trait instead.
-    ///
-    /// # Panics
-    /// Panics if the slice length is not exactly 11 bytes.
     pub fn from_byte_slice(bytes: &[u8]) -> Self {
         assert!(
             bytes.len() == 11,

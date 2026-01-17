@@ -4,7 +4,6 @@ use sysinfo::System;
 pub struct MachineSpecs {
     pub total_memory_bytes: u64,
     pub cpu_cores_logical: usize,
-    pub cpu_cores_physical: usize,
     #[cfg(target_os = "macos")]
     pub mac_perf_cores: Option<u32>,
 }
@@ -16,7 +15,6 @@ impl MachineSpecs {
 
         let total_memory_bytes = sys.total_memory();
         let cpu_cores_logical = sys.cpus().len();
-        let cpu_cores_physical = sys.physical_core_count().unwrap_or(cpu_cores_logical);
 
         #[cfg(target_os = "macos")]
         let (mac_perf_cores, _mac_eff_cores) = mac_perf_eff_cores();
@@ -24,7 +22,6 @@ impl MachineSpecs {
         Self {
             total_memory_bytes,
             cpu_cores_logical,
-            cpu_cores_physical,
             #[cfg(target_os = "macos")]
             mac_perf_cores,
         }
