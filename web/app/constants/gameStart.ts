@@ -44,6 +44,35 @@ export const PLAYER_MOVES_FIRST_DATA: EngineResponse = {
   ],
   pieceToPlace: 0, // Player selects first piece
   description: "Select a piece for your opponent to place.",
+  analysis: {
+    ply_grid: "                 ",
+    ply_hex: "FFFFFFFFFFFFFFFFFFFFF0",
+    canon_hex: "FFFFFFFFFFFFFFFFFFFFF0",
+    orbits: [
+      {
+        canon_hex: "0000000000000000000000",
+        outcome: 15,
+        moves: [
+          { piece: 0, hex: "0000000000000000000000" },
+          { piece: 1, hex: "0000000000000000000010" },
+          { piece: 2, hex: "0000000000000000000020" },
+          { piece: 3, hex: "0000000000000000000030" },
+          { piece: 4, hex: "0000000000000000000040" },
+          { piece: 5, hex: "0000000000000000000050" },
+          { piece: 6, hex: "0000000000000000000060" },
+          { piece: 7, hex: "0000000000000000000070" },
+          { piece: 8, hex: "0000000000000000000080" },
+          { piece: 9, hex: "0000000000000000000090" },
+          { piece: 10, hex: "00000000000000000000A0" },
+          { piece: 11, hex: "00000000000000000000B0" },
+          { piece: 12, hex: "00000000000000000000C0" },
+          { piece: 13, hex: "00000000000000000000D0" },
+          { piece: 14, hex: "00000000000000000000E0" },
+          { piece: 15, hex: "00000000000000000000F0" },
+        ],
+      },
+    ],
+  },
   moves: [
     { piece: 0, hex: "0000000000000000000000", description: "You selected piece 0." },
     { piece: 1, hex: "0000000000000000000010", description: "You selected piece 1." },

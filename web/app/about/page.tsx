@@ -5,7 +5,7 @@ export default function About() {
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
-      <Header mode="landing" onReturnToTitle={() => {}} />
+      <Header />
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-6 py-12">
