@@ -5,7 +5,7 @@ use std::time::SystemTime;
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum SolveEvent {
     RunStart {
-        layer: u32,
+        depth: u32,
         workers: u32,
         shard_bits: u8,
         #[serde(with = "system_time_serde")]
@@ -13,7 +13,7 @@ pub enum SolveEvent {
     },
 
     RunResume {
-        layer: u32,
+        depth: u32,
         workers: u32,
         shard_bits: u8,
         #[serde(with = "system_time_serde")]

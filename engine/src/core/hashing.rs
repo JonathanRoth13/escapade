@@ -6,11 +6,11 @@ const DOMAIN_WORKER: u64 = 0x97b750923ceb3ffd;
 
 use xxhash_rust::xxh3::xxh3_64_with_seed;
 
-use crate::common::Ply;
+use crate::core::Node;
 
 /// Hash for shard selection
-pub fn hash_shard_ply(ply: &Ply) -> u64 {
-    xxh3_64_with_seed(&ply.to_bytes(), DOMAIN_SHARD)
+pub fn hash_shard_node(node: &Node) -> u64 {
+    xxh3_64_with_seed(&node.to_bytes(), DOMAIN_SHARD)
 }
 
 /// Hash for MPH bucket selection within a shard
@@ -19,8 +19,8 @@ pub fn hash_bucket_bytes(key: &[u8; 11]) -> u64 {
 }
 
 /// Hash for MPH bucket selection within a shard
-pub fn hash_bucket_ply(ply: &Ply) -> u64 {
-    hash_bucket_bytes(&ply.to_bytes())
+pub fn hash_bucket_node(node: &Node) -> u64 {
+    hash_bucket_bytes(&node.to_bytes())
 }
 
 /// MPH phi function hash
@@ -30,6 +30,6 @@ pub fn hash_phi_bytes(key: &[u8; 11], l: u64) -> u64 {
 }
 
 /// Hash for worker partitioning during solve/count
-pub fn hash_worker_ply(ply: &Ply) -> u64 {
-    xxh3_64_with_seed(&ply.to_bytes(), DOMAIN_WORKER)
+pub fn hash_worker_node(node: &Node) -> u64 {
+    xxh3_64_with_seed(&node.to_bytes(), DOMAIN_WORKER)
 }

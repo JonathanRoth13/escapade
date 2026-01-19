@@ -1,7 +1,7 @@
-use crate::common::board::Board;
-use crate::common::ply::Ply;
-use crate::common::transform::apply;
-use crate::common::{CANONICAL_TRANSFORMATIONS, LAYER_0_SENTINEL, LAYER_1_CANONICAL};
+use crate::core::bitboard::Board;
+use crate::core::bitboard::node::Node;
+use crate::core::canonicalization::transform::apply;
+use crate::core::{CANONICAL_TRANSFORMATIONS, DEPTH_0_SENTINEL, DEPTH_1_CANONICAL};
 
 /// Helper function to orient a single attribute mask - don't use on empty board
 #[inline(always)]
@@ -15,18 +15,18 @@ fn orient_attribute(occupancy: u16, attribute_mask: u16, piece_to_place_bit: u8)
     }
 }
 
-/// Apply attribute relabeling canonicalization to a ply
+/// Apply attribute relabeling canonicalization to a node
 #[inline(always)]
-pub fn apply_attribute_relabeling(ply: &Ply) -> Ply {
-    debug_assert!(ply.board.occupancy != 0);
+pub fn apply_attribute_relabeling(node: &Node) -> Node {
+    debug_assert!(node.board.occupancy != 0);
 
     let mut oriented_attribute_masks = [0u16; 4];
     let mut oriented_piece_to_place_bits = [0u8; 4];
     for i in 0..4 {
-        let piece_to_play_bit = (ply.piece_to_place >> i) & 1;
+        let piece_to_play_bit = (node.piece_to_place >> i) & 1;
         let (oriented_attribute_mask, oriented_piece_to_play_bit) = orient_attribute(
-            ply.board.occupancy,
-            ply.board.attribute_masks[i],
+            node.board.occupancy,
+            node.board.attribute_masks[i],
             piece_to_play_bit,
         );
         oriented_attribute_masks[i] = oriented_attribute_mask;
@@ -50,30 +50,30 @@ pub fn apply_attribute_relabeling(ply: &Ply) -> Ply {
         new_piece_to_place |= oriented_piece_to_place_bits[idx[ii]] << i;
     }
 
-    Ply {
+    Node {
         board: Board {
-            occupancy: ply.board.occupancy,
+            occupancy: node.board.occupancy,
             attribute_masks: new_attribute_masks,
         },
         piece_to_place: new_piece_to_place,
     }
 }
 
-/// Check if a ply is canonical under attribute relabeling only
+/// Check if a node is canonical under attribute relabeling only
 #[inline(always)]
-pub fn is_ply_canonical_under_attribute_relabeling_only(ply: &Ply) -> bool {
-    debug_assert!(ply.board.occupancy != 0);
+pub fn is_node_canonical_under_attribute_relabeling_only(node: &Node) -> bool {
+    debug_assert!(node.board.occupancy != 0);
 
     for i in 0..4 {
-        let attribute_mask_inverted = ply.board.occupancy ^ ply.board.attribute_masks[i];
-        if attribute_mask_inverted < ply.board.attribute_masks[i] {
+        let attribute_mask_inverted = node.board.occupancy ^ node.board.attribute_masks[i];
+        if attribute_mask_inverted < node.board.attribute_masks[i] {
             return false;
         }
         for ii in (i + 1)..4 {
-            match ply.board.attribute_masks[i].cmp(&ply.board.attribute_masks[ii]) {
+            match node.board.attribute_masks[i].cmp(&node.board.attribute_masks[ii]) {
                 std::cmp::Ordering::Less => return false,
                 std::cmp::Ordering::Equal => {
-                    if ((ply.piece_to_place >> ii) & 1) > ((ply.piece_to_place >> i) & 1) {
+                    if ((node.piece_to_place >> ii) & 1) > ((node.piece_to_place >> i) & 1) {
                         return false;
                     }
                 }
@@ -84,32 +84,32 @@ pub fn is_ply_canonical_under_attribute_relabeling_only(ply: &Ply) -> bool {
     true
 }
 
-/// Full ply canonicalization (both board transformations and attribute relabeling)
+/// Full node canonicalization (both board transformations and attribute relabeling)
 #[inline(always)]
-pub fn canonicalize_ply(ply: &Ply) -> Ply {
-    if *ply == LAYER_0_SENTINEL {
-        return LAYER_0_SENTINEL;
+pub fn canonicalize(node: &Node) -> Node {
+    if *node == DEPTH_0_SENTINEL {
+        return DEPTH_0_SENTINEL;
     }
-    if ply.board.occupancy == 0 {
-        return LAYER_1_CANONICAL;
+    if node.board.occupancy == 0 {
+        return DEPTH_1_CANONICAL;
     }
 
-    let transformations = CANONICAL_TRANSFORMATIONS[ply.board.occupancy as usize];
+    let transformations = CANONICAL_TRANSFORMATIONS[node.board.occupancy as usize];
 
-    let mut best_ply = *ply;
+    let mut best_node = *node;
     for &t in transformations {
-        let transformed_board = apply(&ply.board, t);
-        let transformed_ply = Ply {
+        let transformed_board = apply(&node.board, t);
+        let transformed_node = Node {
             board: transformed_board,
-            piece_to_place: ply.piece_to_place,
+            piece_to_place: node.piece_to_place,
         };
 
-        let canonical_candidate = apply_attribute_relabeling(&transformed_ply);
+        let canonical_candidate = apply_attribute_relabeling(&transformed_node);
 
-        if canonical_candidate < best_ply {
-            best_ply = canonical_candidate;
+        if canonical_candidate < best_node {
+            best_node = canonical_candidate;
         }
     }
 
-    best_ply
+    best_node
 }

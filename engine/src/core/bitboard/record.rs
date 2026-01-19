@@ -1,5 +1,5 @@
-use crate::common::board::Board;
-use crate::common::ply::Ply;
+use super::board::Board;
+use super::node::Node;
 
 /// Serialization format (11 bytes):
 /// - Bytes 0-1: Occupancy mask (u16, big-endian)
@@ -7,21 +7,21 @@ use crate::common::ply::Ply;
 /// - Byte 10: Upper 4 bits = piece_to_place, Lower 4 bits = outcome
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Record {
-    pub ply: Ply,
+    pub node: Node,
     pub outcome: u8, // Only lower 4 bits used (0-15)
 }
 
 impl Record {
     #[inline]
     pub fn to_bytes(self) -> [u8; 11] {
-        let p = u16::to_be_bytes(self.ply.board.occupancy);
-        let a3 = u16::to_be_bytes(self.ply.board.attribute_masks[3]);
-        let a2 = u16::to_be_bytes(self.ply.board.attribute_masks[2]);
-        let a1 = u16::to_be_bytes(self.ply.board.attribute_masks[1]);
-        let a0 = u16::to_be_bytes(self.ply.board.attribute_masks[0]);
+        let p = u16::to_be_bytes(self.node.board.occupancy);
+        let a3 = u16::to_be_bytes(self.node.board.attribute_masks[3]);
+        let a2 = u16::to_be_bytes(self.node.board.attribute_masks[2]);
+        let a1 = u16::to_be_bytes(self.node.board.attribute_masks[1]);
+        let a0 = u16::to_be_bytes(self.node.board.attribute_masks[0]);
 
         // Pack piece_to_place (upper 4 bits) and outcome (lower 4 bits) into one byte
-        let packed = (self.ply.piece_to_place << 4) | (self.outcome & 0x0F);
+        let packed = (self.node.piece_to_place << 4) | (self.outcome & 0x0F);
         [
             p[0], p[1], a3[0], a3[1], a2[0], a2[1], a1[0], a1[1], a0[0], a0[1], packed,
         ]
@@ -40,7 +40,7 @@ impl Record {
         let a0 = u16::from_be_bytes([x[8], x[9]]);
 
         Self {
-            ply: Ply {
+            node: Node {
                 board: Board {
                     occupancy,
                     attribute_masks: [a0, a1, a2, a3],
@@ -70,7 +70,7 @@ impl Record {
         let a0 = u16::from_be_bytes([bytes[8], bytes[9]]);
 
         Self {
-            ply: Ply {
+            node: Node {
                 board: Board {
                     occupancy,
                     attribute_masks: [a0, a1, a2, a3],

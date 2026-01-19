@@ -25,7 +25,7 @@ export default function LandingPage({
             Quarto is played on a 4×4 board with 16 unique pieces. Each piece
             is tall or short, light or dark, square or circular, and hollow or
             solid. Players take turns choosing a piece which their opponent
-            must place. Win by completing a row of four pieces that share any
+            must place. Win by completing a line of four pieces that share any
             attribute.
           </p>
 

@@ -1,5 +1,4 @@
-use crate::common::check_line_mask::check_line_mask;
-use crate::common::{Board, LAYER_0_SENTINEL, LINE_MASKS, Ply};
+use crate::core::{Board, DEPTH_0_SENTINEL, LINE_MASKS, Node, check_line_mask};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ValidationError {
@@ -104,41 +103,40 @@ pub fn validate_board(board: &Board) -> Result<(), ValidationError> {
     Ok(())
 }
 
-/// Validate a ply (board + piece_to_place)
-pub fn validate_ply(ply: &Ply) -> Result<(), ValidationError> {
-    // Skip validation for LAYER_0_SENTINEL (root position)
-    if *ply == LAYER_0_SENTINEL {
+/// Validate a node (board + piece_to_place)
+pub fn validate_node(node: &Node) -> Result<(), ValidationError> {
+    if *node == DEPTH_0_SENTINEL {
         return Ok(());
     }
 
-    validate_board(&ply.board)?;
+    validate_board(&node.board)?;
 
     // Check if this is a terminal position (has a quarto)
     let has_quarto = LINE_MASKS
         .iter()
-        .any(|&mask| check_line_mask(&ply.board, mask));
+        .any(|&mask| check_line_mask(&node.board, mask));
 
     if has_quarto {
         // Terminal positions must have piece_to_place = 0
-        if ply.piece_to_place != 0 {
+        if node.piece_to_place != 0 {
             return Err(ValidationError::TerminalPositionInvalidPiece);
         }
     } else {
         // Non-terminal: check that piece_to_place is not already used on the board
-        let mut remaining_occupied = ply.board.occupancy;
+        let mut remaining_occupied = node.board.occupancy;
 
         while remaining_occupied != 0 {
             let cell_bit = remaining_occupied & remaining_occupied.wrapping_neg();
             remaining_occupied ^= cell_bit;
 
             let mut piece_id: u8 = 0;
-            for (i, &attr_mask) in ply.board.attribute_masks.iter().enumerate() {
+            for (i, &attr_mask) in node.board.attribute_masks.iter().enumerate() {
                 if (attr_mask & cell_bit) != 0 {
                     piece_id |= 1u8 << i;
                 }
             }
 
-            if piece_id == ply.piece_to_place {
+            if piece_id == node.piece_to_place {
                 return Err(ValidationError::PieceToPlaceAlreadyUsed);
             }
         }

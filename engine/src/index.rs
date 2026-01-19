@@ -1,4 +1,4 @@
-use crate::common::{MachineSpecs, hash_bucket_bytes, hash_phi_bytes};
+use crate::core::{MachineSpecs, hash_bucket_bytes, hash_phi_bytes};
 use anyhow::Result;
 use bitvec::prelude::*;
 use memmap2::MmapOptions;
@@ -23,7 +23,7 @@ fn record_to_key(record: &[u8; 11]) -> [u8; 11] {
 
 #[allow(clippy::too_many_arguments)]
 pub fn run(
-    layer: u32,
+    depth: u32,
     shard_path: PathBuf,
     index_path: PathBuf,
     shard_id: u8,
@@ -57,7 +57,8 @@ pub fn run(
     let num_buckets: u64 = 1u64 << bucket_bits;
 
     // Calculate m = number of slots
-    // we multiply by 2 to give us at most a load factor of .5, not in the algorithm
+    // we multiply by 2 to give us at most a load factor of .5
+    // this is a deviation from the CHD algorithm
     let slots_needed = (num_keys as f64 * 2.0).ceil() as u64;
     let log2_slots = (slots_needed as f64).log2();
     let slot_bits = log2_slots.ceil() as u32;
@@ -68,8 +69,8 @@ pub fn run(
     // Per-worker memory: worker_offsets (reuses local_histograms memory from Pass 1)
     let shared_memory = (num_keys * 11) +       // keys array
         (num_buckets * 8) +                     // bucket_histogram
-        (num_buckets * 8); // bucket_offsets
-    let per_worker_memory = num_buckets * 8; // worker_offsets / local_histogram
+        (num_buckets * 8);                      // bucket_offsets
+    let per_worker_memory = num_buckets * 8;    // worker_offsets / local_histogram
     let memory_for_workers = available_memory.saturating_sub(shared_memory);
     let max_workers = if per_worker_memory > 0 {
         (memory_for_workers / per_worker_memory).max(1) as u32
@@ -98,7 +99,6 @@ pub fn run(
         None => cpu_workers.min(max_workers),
     };
 
-    // Configure rayon thread pool
     rayon::ThreadPoolBuilder::new()
         .num_threads(workers as usize)
         .build_global()
@@ -510,8 +510,8 @@ pub fn run(
     header[offset] = 1;
     offset += 1;
 
-    // Layer (1 byte)
-    header[offset] = layer as u8;
+    // Depth (1 byte)
+    header[offset] = depth as u8;
     offset += 1;
 
     // Shard ID (1 byte)

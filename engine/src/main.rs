@@ -2,9 +2,9 @@
 static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
 mod cli;
-mod common;
 mod engine;
 mod index;
+mod core;
 mod merge;
 mod solve;
 mod tablebase;
@@ -17,7 +17,7 @@ fn main() {
     match cli.cmd {
         Commands::Solve(cmd) => {
             if let Err(e) = solve::run(
-                cmd.layer,
+                cmd.depth,
                 cmd.shard_bits,
                 cmd.reserve_os,
                 cmd.workers,
@@ -38,7 +38,7 @@ fn main() {
         }
         Commands::Index(cmd) => {
             if let Err(e) = index::run(
-                cmd.layer as u32,
+                cmd.depth as u32,
                 cmd.shard_path,
                 cmd.index_path,
                 cmd.shard_id,

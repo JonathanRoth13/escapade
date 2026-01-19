@@ -14,7 +14,7 @@ export type TrayPiece = {
   border: boolean;
 };
 
-export type Mode = "landing" | "play" | "analysis";
+export type Mode = "landing" | "play";
 
 export interface GameState {
   mode: Mode;
@@ -65,7 +65,6 @@ export type GameAction =
   // Session actions
   | { type: "RESET" }
   | { type: "START_PLAY_MODE" }
-  | { type: "START_ANALYSIS_MODE" }
 
   // Play mode actions
   | { type: "PLAYER_MOVE_FIRST" }
@@ -105,11 +104,6 @@ export type GameAction =
       analysis?: AnalysisResult;
     }
 
-  // Analysis mode actions
-  | { type: "SET_BOARD_AND_TRAY"; board: Board; tray: TrayPiece[] }
-  | { type: "SET_PIECE_TO_PLACE"; pieceId: number | undefined }
-  | { type: "SET_ANALYSIS_DATA"; data: AnalysisResult }
-
   // Move history actions
   | { type: "ADD_MOVE_TO_HISTORY"; move: string }
 
@@ -127,15 +121,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         engineStrength: state.engineStrength,
         mode: "play",
       }; 
-
-    case "START_ANALYSIS_MODE":
-      return {
-        ...initialGameState,
-        engineStrength: state.engineStrength,
-        mode: "analysis",
-        isRightPanelLocked:false
-
-      };
 
     case "PLAYER_MOVE_FIRST":
       return {
@@ -387,25 +372,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         outcome: "draw",
         analysisData: action.analysis,
         displayPlayAgain: false,
-      };
-
-    case "SET_BOARD_AND_TRAY":
-      return {
-        ...state,
-        board: action.board,
-        tray: action.tray,
-      };
-
-    case "SET_PIECE_TO_PLACE":
-      return {
-        ...state,
-        pieceToPlace: action.pieceId,
-      };
-
-    case "SET_ANALYSIS_DATA":
-      return {
-        ...state,
-        analysisData: action.data,
       };
 
     case "ADD_MOVE_TO_HISTORY":

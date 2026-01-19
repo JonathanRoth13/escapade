@@ -16,7 +16,7 @@ pub struct Cli {
 #[derive(Subcommand, Debug)]
 #[command(rename_all = "kebab-case", subcommand_required = true)]
 pub enum Commands {
-    /// Evaluate every position in a layer and write to partition files
+    /// Evaluate every position in a depth and write to partition files
     Solve(SolveCommand),
 
     /// Consolidate partition files into a shard file
@@ -31,12 +31,12 @@ pub enum Commands {
 
 #[derive(Args, Debug)]
 pub struct SolveCommand {
-    /// Layer to solve (moves made = 0..=16)
+    /// Depth
     #[arg(
-        value_name = "LAYER",
+        value_name = "DEPTH",
         value_parser = clap::value_parser!(u32).range(0..=16)
     )]
-    pub layer: u32,
+    pub depth: u32,
 
     /// Directory to write partition files
     #[arg(value_name = "PARTITION_DIR", value_hint = ValueHint::DirPath)]
@@ -88,8 +88,9 @@ pub struct IndexCommand {
     #[arg(value_name = "INDEX_PATH", value_hint = ValueHint::FilePath)]
     pub index_path: PathBuf,
 
-    #[arg(value_name = "LAYER")]
-    pub layer: u8,
+    /// Depth
+    #[arg(value_name = "DEPTH")]
+    pub depth: u8,
 
     /// Shard number (0-based)
     #[arg(value_name = "SHARD_ID")]

@@ -1,8 +1,9 @@
-use crate::common::{
-    Board, LAYER_0_SENTINEL, Ply, canonicalize_ply, compute_unused_pieces_mask, evaluate,
-    format_ply, format_ply_hex, outcome_to_sort_score,
+use super::parsing::{format_node_grid, format_node_hex};
+use crate::core::{
+    Board, DEPTH_0_SENTINEL, Node, canonicalize, compute_unused_pieces_mask, evaluate,
+    outcome_to_sort_score,
 };
-use crate::common::{LINE_MASKS, check_line_mask};
+use crate::core::{LINE_MASKS, check_line_mask};
 use crate::tablebase::TablebaseIndex;
 use serde::Serialize;
 
@@ -45,8 +46,8 @@ struct MoveCandidate {
     square: Option<u8>,
     piece: Option<u8>,
     quartos: Option<Vec<Quarto>>,
-    resulting_ply: Ply,
-    canonical_ply: Ply,
+    resulting_node: Node,
+    canonical_node: Node,
 }
 
 struct IntermediateBoard {
@@ -64,28 +65,28 @@ pub fn sort_orbits(orbits: &mut [Orbit], is_second_player: bool) {
     });
 }
 
-pub fn analyze(ply: &Ply, tablebase: Option<&TablebaseIndex>) -> String {
-    let layer = if *ply == LAYER_0_SENTINEL {
+pub fn analyze(node: &Node, tablebase: Option<&TablebaseIndex>) -> String {
+    let depth = if *node == DEPTH_0_SENTINEL {
         0
     } else {
-        ply.board.occupancy.count_ones() as usize + 1
+        node.board.occupancy.count_ones() as usize + 1
     };
 
-    let is_player_first: bool = layer % 2 == 0;
+    let is_player_first: bool = depth % 2 == 0;
 
-    let ply_grid = format_ply(ply);
-    let ply_hex = format_ply_hex(ply);
+    let ply_grid = format_node_grid(node);
+    let ply_hex = format_node_hex(node);
 
-    let canonical_ply = canonicalize_ply(ply);
-    let canon_hex = format_ply_hex(&canonical_ply);
+    let canonical_node = canonicalize(node);
+    let canon_hex = format_node_hex(&canonical_node);
 
-    if layer > 4 {
+    if depth > 4 {
         let mut quarto: Vec<Quarto> = Vec::with_capacity(3);
 
         for mask in &LINE_MASKS {
-            if check_line_mask(&ply.board, *mask) {
+            if check_line_mask(&node.board, *mask) {
                 let quarto_squares = extract_square_indices(*mask);
-                let quarto_attributes = get_quarto_attribute(&ply.board, *mask);
+                let quarto_attributes = get_quarto_attribute(&node.board, *mask);
                 for quarto_attribute in quarto_attributes {
                     quarto.push(Quarto {
                         intersection: quarto_squares,
@@ -107,43 +108,43 @@ pub fn analyze(ply: &Ply, tablebase: Option<&TablebaseIndex>) -> String {
         }
     }
 
-    let move_candidates: Vec<MoveCandidate> = match layer {
-        0 => get_moves_layer_0(),
-        _ => get_moves_general(ply, tablebase, layer),
+    let move_candidates: Vec<MoveCandidate> = match depth {
+        0 => get_moves_depth_0(),
+        _ => get_moves_general(node, tablebase, depth),
     };
 
     let mut orbits = Vec::new();
     let mut processed = Vec::new();
 
     for candidate in &move_candidates {
-        if processed.contains(&candidate.canonical_ply) {
+        if processed.contains(&candidate.canonical_node) {
             continue;
         }
-        processed.push(candidate.canonical_ply);
+        processed.push(candidate.canonical_node);
 
         let mut candidates_in_orbit: Vec<&MoveCandidate> = move_candidates
             .iter()
-            .filter(|c| c.canonical_ply == candidate.canonical_ply)
+            .filter(|c| c.canonical_node == candidate.canonical_node)
             .collect();
 
-        candidates_in_orbit.sort_by(|a, b| a.resulting_ply.cmp(&b.resulting_ply));
+        candidates_in_orbit.sort_by(|a, b| a.resulting_node.cmp(&b.resulting_node));
 
         let moves: Vec<Move> = candidates_in_orbit
             .iter()
             .map(|c| Move {
                 square: c.square,
                 piece: c.piece,
-                hex: format_ply_hex(&c.resulting_ply),
+                hex: format_node_hex(&c.resulting_node),
                 quarto: c.quartos.clone(),
             })
             .collect();
 
-        let canon_hex = format_ply_hex(&candidate.canonical_ply);
+        let canon_hex = format_node_hex(&candidate.canonical_node);
 
         let outcome = if candidate.quartos.is_some() {
-            (17 - layer) as u8
+            (17 - depth) as u8
         } else {
-            evaluate(&candidate.canonical_ply, tablebase)
+            evaluate(&candidate.canonical_node, tablebase)
         };
 
         orbits.push(Orbit {
@@ -166,7 +167,7 @@ pub fn analyze(ply: &Ply, tablebase: Option<&TablebaseIndex>) -> String {
     serde_json::to_string(&result).unwrap_or_else(|_| "{}".to_string())
 }
 
-fn get_moves_layer_0() -> Vec<MoveCandidate> {
+fn get_moves_depth_0() -> Vec<MoveCandidate> {
     let mut moves = Vec::with_capacity(16);
     let empty_board = Board {
         occupancy: 0,
@@ -177,11 +178,11 @@ fn get_moves_layer_0() -> Vec<MoveCandidate> {
         moves.push(MoveCandidate {
             square: None,
             piece: Some(piece_index),
-            resulting_ply: Ply {
+            resulting_node: Node {
                 board: empty_board,
                 piece_to_place: piece_index,
             },
-            canonical_ply: Ply {
+            canonical_node: Node {
                 board: empty_board,
                 piece_to_place: 0,
             },
@@ -191,11 +192,15 @@ fn get_moves_layer_0() -> Vec<MoveCandidate> {
     moves
 }
 
-fn get_moves_general(ply: &Ply, _tablebase: Option<&TablebaseIndex>, layer: usize) -> Vec<MoveCandidate> {
+fn get_moves_general(
+    node: &Node,
+    _tablebase: Option<&TablebaseIndex>,
+    depth: usize,
+) -> Vec<MoveCandidate> {
     let mut moves = Vec::with_capacity(16 * 16);
-    let mut empty_squares_mask = !ply.board.occupancy;
+    let mut empty_squares_mask = !node.board.occupancy;
     let mut non_terminal_boards = Vec::with_capacity(16);
-    let available_pieces_mask = compute_unused_pieces_mask(ply);
+    let available_pieces_mask = compute_unused_pieces_mask(node);
 
     'next_square: while empty_squares_mask != 0 {
         let square_mask = lowest_bit(empty_squares_mask);
@@ -203,12 +208,12 @@ fn get_moves_general(ply: &Ply, _tablebase: Option<&TablebaseIndex>, layer: usiz
         empty_squares_mask ^= square_mask;
 
         let board_after_placement =
-            crate::common::place(&ply.board, ply.piece_to_place, square_mask);
-        let line_masks = crate::common::LINE_MASKS_INDEX[square_index as usize];
+            crate::core::evaluation::place(&node.board, node.piece_to_place, square_mask);
+        let line_masks = crate::core::LINE_MASKS_INDEX[square_index as usize];
 
         let mut quartos: Vec<Quarto> = Vec::with_capacity(3);
         for &line_mask in line_masks {
-            if crate::common::check_line_mask(&board_after_placement, line_mask) {
+            if check_line_mask(&board_after_placement, line_mask) {
                 let quarto_squares = extract_square_indices(line_mask);
                 let quarto_attributes = get_quarto_attribute(&board_after_placement, line_mask);
                 for quarto_attribute in quarto_attributes {
@@ -220,18 +225,22 @@ fn get_moves_general(ply: &Ply, _tablebase: Option<&TablebaseIndex>, layer: usiz
             }
         }
 
-        if !quartos.is_empty() || layer == 16 {
-            let terminal_ply = Ply {
+        if !quartos.is_empty() || depth == 16 {
+            let terminal_node = Node {
                 board: board_after_placement,
                 piece_to_place: 0,
             };
-            let canonical_ply = canonicalize_ply(&terminal_ply);
+            let canonical_node = canonicalize(&terminal_node);
             moves.push(MoveCandidate {
                 square: Some(square_index),
                 piece: None,
-                quartos: if quartos.is_empty() { None } else { Some(quartos) },
-                resulting_ply: terminal_ply,
-                canonical_ply,
+                quartos: if quartos.is_empty() {
+                    None
+                } else {
+                    Some(quartos)
+                },
+                resulting_node: terminal_node,
+                canonical_node,
             });
             continue 'next_square;
         }
@@ -249,18 +258,18 @@ fn get_moves_general(ply: &Ply, _tablebase: Option<&TablebaseIndex>, layer: usiz
         remaining_pieces_mask ^= piece_mask;
 
         for intermediate in &non_terminal_boards {
-            let resulting_ply = Ply {
+            let resulting_node = Node {
                 board: intermediate.board,
                 piece_to_place: piece_index,
             };
-            let canonical_ply = canonicalize_ply(&resulting_ply);
+            let canonical_node = canonicalize(&resulting_node);
 
             moves.push(MoveCandidate {
                 square: Some(intermediate.square_placed),
                 piece: Some(piece_index),
                 quartos: None,
-                resulting_ply,
-                canonical_ply,
+                resulting_node,
+                canonical_node,
             });
         }
     }

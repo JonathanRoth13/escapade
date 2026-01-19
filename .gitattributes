@@ -1,3 +1,3 @@
 # Mark generated files as such (excludes from GitHub language stats)
-engine/src/common/canonical_transformations.rs linguist-generated=true
-engine/src/common/occupancy_masks.rs linguist-generated=true
+engine/src/core/canonicalization/canonical_transformations.rs linguist-generated=true
+engine/src/core/bitboard/occupancy_masks.rs linguist-generated=true

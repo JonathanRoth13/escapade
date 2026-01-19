@@ -1,4 +1,5 @@
-use crate::common::{LAYER_0_SENTINEL, parse_ply, validate_ply};
+use super::parsing::parse_node;
+use crate::core::{DEPTH_0_SENTINEL, validate_node};
 use crate::tablebase::TablebaseIndex;
 use std::io::{self, BufRead, Write};
 
@@ -85,12 +86,12 @@ fn handle_analyze(parts: &[String], tablebase: &Option<TablebaseIndex>, stdout: 
 
     let ply_string = &parts[1];
 
-    // Parse the ply
-    let ply = if ply_string == "root" {
-        LAYER_0_SENTINEL
+    // Parse the node
+    let node = if ply_string == "root" {
+        DEPTH_0_SENTINEL
     } else {
-        // Try to parse the ply
-        let parsed_ply = match parse_ply(ply_string) {
+        // Try to parse the node
+        let parsed_node = match parse_node(ply_string) {
             Ok(p) => p,
             Err(e) => {
                 errors.push(format!("{}", e));
@@ -99,18 +100,18 @@ fn handle_analyze(parts: &[String], tablebase: &Option<TablebaseIndex>, stdout: 
             }
         };
 
-        // Try to validate the ply
-        if let Err(e) = validate_ply(&parsed_ply) {
+        // Try to validate the node
+        if let Err(e) = validate_node(&parsed_node) {
             errors.push(format!("{}", e));
             output_errors(stdout, &errors);
             return;
         }
 
-        parsed_ply
+        parsed_node
     };
 
     // Analyze and output JSON
-    let json = analyze(&ply, tablebase.as_ref());
+    let json = analyze(&node, tablebase.as_ref());
     writeln!(stdout, "{}", json).unwrap();
     stdout.flush().unwrap();
 }
@@ -119,11 +120,11 @@ fn handle_info(tablebase: &Option<TablebaseIndex>, stdout: &mut impl Write) {
     use serde_json::json;
 
     let info = if let Some(tb) = tablebase {
-        let available = tb.available_layers();
+        let available = tb.available_depths();
         let memory_bytes = tb.memory_usage();
 
-        // Collect loaded layers
-        let loaded_layers: Vec<usize> = available
+        // Collect loaded depths
+        let loaded_depths: Vec<usize> = available
             .iter()
             .enumerate()
             .filter_map(|(idx, &loaded)| if loaded { Some(idx) } else { None })
@@ -131,7 +132,7 @@ fn handle_info(tablebase: &Option<TablebaseIndex>, stdout: &mut impl Write) {
 
         json!({
             "loaded": true,
-            "layers": loaded_layers,
+            "depths": loaded_depths,
             "memory_bytes": memory_bytes
         })
     } else {

@@ -20,11 +20,6 @@ export default function Home() {
     "overview" | "history" | "analysis"
   >("overview");
 
-  // Analysis mode: ephemeral UI state for piece selection
-  const [selectedPieceFromTray, setSelectedPieceFromTray] = useState<
-    number | undefined
-  >(undefined);
-
   // ============================================================================
   // Game Handlers - Play Mode
   // ============================================================================
@@ -94,25 +89,6 @@ export default function Home() {
   };
 
   const handlePieceClick = async (pieceId: number) => {
-    if (gameState.mode === "analysis") {
-      // Analysis mode: select piece from tray
-      if (gameState.tray[pieceId].available) {
-        setSelectedPieceFromTray(pieceId);
-        // Update tray to highlight selected piece
-        const newTray = gameState.tray.map((trayPiece, index) => ({
-          ...trayPiece,
-          border: index === pieceId && trayPiece.available,
-        }));
-        dispatch({
-          type: "SET_BOARD_AND_TRAY",
-          board: gameState.board,
-          tray: newTray,
-        });
-      }
-      return;
-    }
-
-    // Play mode logic
     if (!gameState.moves) {
       console.error("No moves available");
       return;
@@ -231,97 +207,11 @@ export default function Home() {
   };
 
   // ============================================================================
-  // Board and Piece Handlers - Shared between modes
+  // Board Handler
   // ============================================================================
 
   const handleBoardClick = async (square: number) => {
-    if (gameState.mode === "analysis") {
-      // Analysis mode: place or clear pieces
-      const pieceAtSquare = gameState.board[square].piece;
-
-      if (pieceAtSquare != null) {
-        // Square is occupied - clear it
-        const newBoard = gameState.board.map((cell, index) =>
-          index === square ? { piece: undefined, highlighted: false } : cell,
-        );
-
-        const newTray = gameState.tray.map((trayPiece, index) =>
-          index === pieceAtSquare
-            ? { available: true, border: false }
-            : trayPiece,
-        );
-
-        dispatch({
-          type: "SET_BOARD_AND_TRAY",
-          board: newBoard,
-          tray: newTray,
-        });
-      } else if (selectedPieceFromTray !== undefined) {
-        // Square is empty and we have a piece selected - place it
-        const newBoard = gameState.board.map((cell, index) =>
-          index === square
-            ? { piece: selectedPieceFromTray, highlighted: false }
-            : cell,
-        );
-
-        const newTray = gameState.tray.map((trayPiece, index) =>
-          index === selectedPieceFromTray
-            ? { available: false, border: false }
-            : trayPiece,
-        );
-
-        dispatch({
-          type: "SET_BOARD_AND_TRAY",
-          board: newBoard,
-          tray: newTray,
-        });
-        setSelectedPieceFromTray(undefined);
-      }
-      return;
-    }
-
-    // Play mode logic
     dispatch({ type: "PLACE_PIECE", square });
-  };
-
-  // ============================================================================
-  // Analysis Mode Handlers
-  // ============================================================================
-
-  const handleLeftPanelPieceClick = () => {
-    if (gameState.mode === "analysis") {
-      if (gameState.pieceToPlace !== undefined) {
-        // Clear the piece to place
-        const newTray = gameState.tray.map((trayPiece, index) =>
-          index === gameState.pieceToPlace
-            ? { available: true, border: false }
-            : trayPiece,
-        );
-        dispatch({
-          type: "SET_BOARD_AND_TRAY",
-          board: gameState.board,
-          tray: newTray,
-        });
-        dispatch({ type: "SET_PIECE_TO_PLACE", pieceId: undefined });
-      } else if (selectedPieceFromTray !== undefined) {
-        // Place selected piece in left panel
-        const newTray = gameState.tray.map((trayPiece, index) =>
-          index === selectedPieceFromTray
-            ? { available: false, border: false }
-            : trayPiece,
-        );
-        dispatch({
-          type: "SET_BOARD_AND_TRAY",
-          board: gameState.board,
-          tray: newTray,
-        });
-        dispatch({
-          type: "SET_PIECE_TO_PLACE",
-          pieceId: selectedPieceFromTray,
-        });
-        setSelectedPieceFromTray(undefined);
-      }
-    }
   };
 
   const handleReturnToTitle = () => {
@@ -366,18 +256,16 @@ export default function Home() {
                 >
                   Overview
                 </button>
-                {gameState.mode === "play" && (
-                  <button
-                    onClick={() => setActiveTab("history")}
-                    className={`flex-1 px-4 py-2 text-sm font-medium ${
-                      activeTab === "history"
-                        ? "text-gray-900 border-b-2 border-gray-900"
-                        : "text-gray-500 hover:text-gray-700"
-                    }`}
-                  >
-                    History
-                  </button>
-                )}
+                <button
+                  onClick={() => setActiveTab("history")}
+                  className={`flex-1 px-4 py-2 text-sm font-medium ${
+                    activeTab === "history"
+                      ? "text-gray-900 border-b-2 border-gray-900"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  History
+                </button>
                 <button
                   onClick={() => setActiveTab("analysis")}
                   className={`flex-1 px-4 py-2 text-sm font-medium ${
@@ -393,122 +281,54 @@ export default function Home() {
               {/* Tab Content */}
               {activeTab === "overview" && (
                 <>
-                  {gameState.mode === "play" ? (
-                    <>
-                      {/* Notification Area - takes all space up to the line */}
-                      <div className="flex-1 mb-6 flex items-center justify-center">
-                        <div className="space-y-3 text-center">
-                          {/* Game Over States */}
-                          {gameState.outcome === "player_win" && (
-                            <>
-                              <p className="text-5xl font-bold text-gray-900">
-                                Quarto!
-                              </p>
-                              <p className="text-3xl font-bold text-gray-900">
-                                Player Wins
-                              </p>
-                            </>
-                          )}
-                          {gameState.outcome === "engine_win" && (
-                            <>
-                              <p className="text-5xl font-bold text-gray-900">
-                                Quarto!
-                              </p>
-                              <p className="text-3xl font-bold text-gray-900">
-                                Engine Wins
-                              </p>
-                            </>
-                          )}
-                          {gameState.outcome === "draw" && (
-                            <>
-                              <p className="text-5xl font-bold text-gray-900">
-                                Draw
-                              </p>
-                            </>
-                          )}
+                  {/* Notification Area - takes all space up to the line */}
+                  <div className="flex-1 mb-6 flex items-center justify-center">
+                    <div className="space-y-3 text-center">
+                      {/* Game Over States */}
+                      {gameState.outcome === "player_win" && (
+                        <>
+                          <p className="text-5xl font-bold text-gray-900">
+                            Quarto!
+                          </p>
+                          <p className="text-3xl font-bold text-gray-900">
+                            Player Wins
+                          </p>
+                        </>
+                      )}
+                      {gameState.outcome === "engine_win" && (
+                        <>
+                          <p className="text-5xl font-bold text-gray-900">
+                            Quarto!
+                          </p>
+                          <p className="text-3xl font-bold text-gray-900">
+                            Engine Wins
+                          </p>
+                        </>
+                      )}
+                      {gameState.outcome === "draw" && (
+                        <>
+                          <p className="text-5xl font-bold text-gray-900">
+                            Draw
+                          </p>
+                        </>
+                      )}
 
-                          {/* During Gameplay */}
-                          {!gameState.outcome && (
-                            <>
-                              {!gameState.isBoardLocked ? (
-                                <p className="text-4xl font-bold text-gray-800">
-                                  Place Piece
-                                </p>
-                              ) : !gameState.isRightPanelLocked ? (
-                                <p className="text-4xl font-bold text-gray-800">
-                                  Select Piece
-                                </p>
-                              ) : null}
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      {/* Analysis Mode - Notification Area and Piece Display */}
-                      <div className="flex-1 mb-6 flex flex-col">
-                        {/* Notification Area */}
-                        <div className="flex-1 flex items-center justify-center">
-                          <div className="space-y-3 text-center">
+                      {/* During Gameplay */}
+                      {!gameState.outcome && (
+                        <>
+                          {!gameState.isBoardLocked ? (
                             <p className="text-4xl font-bold text-gray-800">
-                              Edit Board
+                              Place Piece
                             </p>
-                            <p className="text-lg text-gray-600 px-4">
-                              Place pieces on the board and select a piece to
-                              analyze
+                          ) : !gameState.isRightPanelLocked ? (
+                            <p className="text-4xl font-bold text-gray-800">
+                              Select Piece
                             </p>
-                          </div>
-                        </div>
-
-                        {/* Divider */}
-                        <hr className="border-gray-300 mb-4" />
-
-                        {/* Piece to Place Display */}
-                        {gameState.pieceToPlace !== undefined ? (
-                          <div
-                            className="flex items-center justify-center py-4 cursor-pointer"
-                            onClick={handleLeftPanelPieceClick}
-                          >
-                            <PieceInHandDisplay
-                              pieceId={gameState.pieceToPlace}
-                            />
-                          </div>
-                        ) : selectedPieceFromTray !== undefined ? (
-                          <div
-                            className="flex items-center justify-center py-4 cursor-pointer"
-                            onClick={handleLeftPanelPieceClick}
-                          >
-                            <div
-                              className="bg-gray-50 border-2 border-dashed border-gray-400 flex items-center justify-center"
-                              style={{
-                                width:
-                                  "calc(min(50vw, calc(100vh - 7rem - 3vw)) / 4)",
-                                height:
-                                  "calc(min(50vw, calc(100vh - 7rem - 3vw)) / 4)",
-                              }}
-                            >
-                              <p className="text-gray-500 text-sm text-center px-2">
-                                Click to place here
-                              </p>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-center py-4">
-                            <div
-                              className="bg-gray-50 border-2 border-gray-300 flex items-center justify-center"
-                              style={{
-                                width:
-                                  "calc(min(50vw, calc(100vh - 7rem - 3vw)) / 4)",
-                                height:
-                                  "calc(min(50vw, calc(100vh - 7rem - 3vw)) / 4)",
-                              }}
-                            ></div>
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )}
+                          ) : null}
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </>
               )}
 
@@ -549,76 +369,60 @@ export default function Home() {
                 <>
                   <hr className="border-gray-300 mb-6" />
 
-                  {gameState.mode === "play" && (
-                    <>
-                      {/* Play Again Options - Conditional */}
-                      {gameState.outcome ? (
-                        <div className="border-2 border-gray-300 rounded-lg p-4 bg-white mb-6">
-                          <h3 className="text-sm font-semibold text-gray-900 mb-2 text-center">
-                            Play Again
-                          </h3>
-                          <div className="flex flex-col gap-2">
-                            <button
-                              onClick={() => {
-                                dispatch({ type: "RESET" });
-                                startGame("first");
-                              }}
-                              className="w-full px-6 py-3 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
-                            >
-                              Player Moves First
-                            </button>
-                            <button
-                              onClick={() => {
-                                dispatch({ type: "RESET" });
-                                startGame("second");
-                              }}
-                              className="w-full px-6 py-3 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
-                            >
-                              Player Moves Second
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="mb-6" style={{ height: "152px" }}></div>
-                      )}
-
-                      {/* Engine Strength */}
-                      <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Engine Strength: {gameState.engineStrength}
-                        </label>
-                        <input
-                          type="range"
-                          min="0"
-                          max="100"
-                          value={gameState.engineStrength}
-                          onChange={(e) =>
-                            dispatch({
-                              type: "SET_STRENGTH",
-                              strength: Number(e.target.value),
-                            })
-                          }
-                          className="w-full accent-gray-700"
-                        />
-                        <div className="flex justify-between text-xs text-gray-500 mt-1">
-                          <span>Random</span>
-                          <span>Perfect</span>
-                        </div>
+                  {/* Play Again Options - Conditional */}
+                  {gameState.outcome ? (
+                    <div className="border-2 border-gray-300 rounded-lg p-6 bg-white shadow-lg mb-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3 text-center">
+                        Play Again
+                      </h3>
+                      <div className="flex flex-col gap-2">
+                        <button
+                          onClick={() => {
+                            dispatch({ type: "RESET" });
+                            startGame("first");
+                          }}
+                          className="w-full px-6 py-3 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
+                        >
+                          Go First
+                        </button>
+                        <button
+                          onClick={() => {
+                            dispatch({ type: "RESET" });
+                            startGame("second");
+                          }}
+                          className="w-full px-6 py-3 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
+                        >
+                          Go Second
+                        </button>
                       </div>
-                    </>
+                    </div>
+                  ) : (
+                    <div className="mb-6" style={{ height: "168px" }}></div>
                   )}
 
-                  {gameState.mode === "analysis" && (
-                    <>
-                      {/* Analyze Button */}
-                      <button
-                        onClick={() => console.log("Analyze position")}
-                        className="w-full px-4 py-2 mb-4 bg-gray-700 text-white rounded font-medium hover:bg-gray-800 transition-colors"
-                      >
-                        Analyze Position
-                      </button>
-                    </>
-                  )}
+                  {/* Engine Strength */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Engine Strength: {gameState.engineStrength}
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={gameState.engineStrength}
+                      onChange={(e) =>
+                        dispatch({
+                          type: "SET_STRENGTH",
+                          strength: Number(e.target.value),
+                        })
+                      }
+                      className="w-full accent-gray-700"
+                    />
+                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <span>Random</span>
+                      <span>Perfect</span>
+                    </div>
+                  </div>
 
                   {/* Return to Title */}
                   <button
@@ -646,10 +450,7 @@ export default function Home() {
           ) : (
             <GameBoard
               cells={gameState.board}
-              enableHover={
-                //gameState.mode === "analysis" || !gameState.isBoardLocked
-                !gameState.isBoardLocked
-              }
+              enableHover={!gameState.isBoardLocked}
               loading={loading}
               onCellClick={handleBoardClick}
             />
@@ -660,7 +461,7 @@ export default function Home() {
         <div
           className={
             gameState.mode !== "landing"
-              ? gameState.mode === "analysis" || gameState.isRightPanelTray
+              ? gameState.isRightPanelTray
                 ? "bg-white rounded-lg shadow-md p-6"
                 : "bg-white rounded-lg shadow-md flex items-center justify-center"
               : ""
@@ -671,7 +472,7 @@ export default function Home() {
           }}
         >
           {gameState.mode !== "landing" &&
-            (gameState.mode === "analysis" || gameState.isRightPanelTray ? (
+            (gameState.isRightPanelTray ? (
               <PieceTray
                 enabled={!gameState.isRightPanelLocked}
                 pieces={gameState.tray}

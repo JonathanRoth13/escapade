@@ -1,4 +1,4 @@
-use crate::common::Board;
+use crate::core::bitboard::Board;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Transformation {

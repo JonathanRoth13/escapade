@@ -1,4 +1,4 @@
-use crate::common::{Ply, hash_bucket_ply, hash_phi_bytes};
+use crate::core::{Node, hash_bucket_node, hash_phi_bytes};
 use anyhow::{Result, anyhow};
 use memmap2::Mmap;
 use std::fs::File;
@@ -12,11 +12,9 @@ pub struct TablebaseFile {
     mmap: Mmap,
 
     // Header fields (parsed from first 34 bytes)
-    pub layer: u8,
+    pub depth: u8,
     pub shard_id: u8,
     pub shard_bits: u8,
-    //bucket_bits: u8,
-    //slot_bits: u8,
 
     // Cached derived values (avoid recomputing)
     bucket_mask: u64,
@@ -70,11 +68,11 @@ impl TablebaseFile {
             ));
         }
 
-        // Layer (1 byte)
-        let layer = mmap[offset];
+        // Depth (1 byte)
+        let depth = mmap[offset];
         offset += 1;
-        if layer > 16 {
-            return Err(anyhow!("Invalid layer: {} (must be 0-16)", layer));
+        if depth > 16 {
+            return Err(anyhow!("Invalid depth: {} (must be 0-16)", depth));
         }
 
         // Shard ID (1 byte)
@@ -143,11 +141,9 @@ impl TablebaseFile {
 
         Ok(Self {
             mmap,
-            layer,
+            depth,
             shard_id,
             shard_bits,
-            //bucket_bits,
-            //slot_bits,
             bucket_mask,
             slot_mask,
             outcomes_offset,
@@ -155,14 +151,11 @@ impl TablebaseFile {
     }
 
     /// Query outcome for a position (4-bit value 0-15)
-    ///
-    /// # Arguments
-    /// * `ply` - The position to query
-    pub fn query(&self, ply: &Ply) -> u8 {
-        let key = ply.to_bytes();
+    pub fn query(&self, node: &Node) -> u8 {
+        let key = node.to_bytes();
 
         // 1. Hash (bucket) to get bucket_id
-        let hash_bucket = hash_bucket_ply(ply);
+        let hash_bucket = hash_bucket_node(node);
         let bucket_id = hash_bucket & self.bucket_mask;
 
         // 2. Read sigma value (u16) for this bucket
@@ -178,7 +171,6 @@ impl TablebaseFile {
 
     /// Read sigma value (u16) for a bucket
     fn read_sigma(&self, bucket_id: u64) -> u16 {
-        // Sigma table starts right after header
         let offset = HEADER_SIZE + (bucket_id as usize * 2);
         u16::from_le_bytes([self.mmap[offset], self.mmap[offset + 1]])
     }
@@ -204,11 +196,9 @@ impl TablebaseFile {
 impl std::fmt::Debug for TablebaseFile {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("TablebaseFile")
-            .field("layer", &self.layer)
+            .field("depth", &self.depth)
             .field("shard_id", &self.shard_id)
             .field("shard_bits", &self.shard_bits)
-            //.field("bucket_bits", &self.bucket_bits)
-            //.field("slot_bits", &self.slot_bits)
             .field("size", &self.size())
             .finish()
     }

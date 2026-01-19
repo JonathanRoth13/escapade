@@ -1,12 +1,12 @@
-use crate::common::board::Board;
+use super::board::Board;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Ply {
+pub struct Node {
     pub board: Board,
     pub piece_to_place: u8,
 }
 
-impl Ply {
+impl Node {
     #[inline]
     pub fn to_bytes(self) -> [u8; 11] {
         let p = u16::to_be_bytes(self.board.occupancy);
@@ -50,7 +50,7 @@ impl Ply {
     pub fn from_byte_slice(bytes: &[u8]) -> Self {
         assert!(
             bytes.len() == 11,
-            "expected 11 bytes for Ply, got {}",
+            "expected 11 bytes for Node, got {}",
             bytes.len()
         );
 
@@ -71,43 +71,43 @@ impl Ply {
     }
 }
 
-impl From<Ply> for [u8; 11] {
+impl From<Node> for [u8; 11] {
     #[inline]
-    fn from(p: Ply) -> Self {
+    fn from(p: Node) -> Self {
         p.to_bytes()
     }
 }
 
-impl From<&Ply> for [u8; 11] {
+impl From<&Node> for [u8; 11] {
     #[inline]
-    fn from(p: &Ply) -> Self {
+    fn from(p: &Node) -> Self {
         p.to_bytes()
     }
 }
 
-impl From<[u8; 11]> for Ply {
+impl From<[u8; 11]> for Node {
     #[inline]
     fn from(x: [u8; 11]) -> Self {
-        Ply::from_bytes(&x)
+        Node::from_bytes(&x)
     }
 }
 
-impl From<&[u8; 11]> for Ply {
+impl From<&[u8; 11]> for Node {
     #[inline]
     fn from(x: &[u8; 11]) -> Self {
-        Ply::from_bytes(x)
+        Node::from_bytes(x)
     }
 }
 
-impl From<&[u8]> for Ply {
+impl From<&[u8]> for Node {
     #[inline]
     fn from(x: &[u8]) -> Self {
-        Ply::from_byte_slice(x)
+        Node::from_byte_slice(x)
     }
 }
 
 /// Used to represent the root position.
-pub const LAYER_0_SENTINEL: Ply = Ply {
+pub const DEPTH_0_SENTINEL: Node = Node {
     board: Board {
         occupancy: 0xFFFF,
         attribute_masks: [0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF],
@@ -115,8 +115,8 @@ pub const LAYER_0_SENTINEL: Ply = Ply {
     piece_to_place: 0xFF,
 };
 
-/// The only canonical move in layer 1
-pub const LAYER_1_CANONICAL: Ply = Ply {
+/// The only canonical move in depth 1
+pub const DEPTH_1_CANONICAL: Node = Node {
     board: Board {
         occupancy: 0,
         attribute_masks: [0, 0, 0, 0],

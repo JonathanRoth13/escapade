@@ -86,11 +86,11 @@ impl EventLogger {
     /// Update console state based on event
     fn update_console_state(&mut self, event: &SolveEvent) {
         match event {
-            SolveEvent::RunStart { layer, .. } => {
-                println!("----- Begin Solve (Layer {}) -----", layer);
+            SolveEvent::RunStart { depth, .. } => {
+                println!("----- Begin Solve (Depth {}) -----", depth);
             }
-            SolveEvent::RunResume { layer, .. } => {
-                println!("----- Resume Solve (Layer {}) -----", layer);
+            SolveEvent::RunResume { depth, .. } => {
+                println!("----- Resume Solve (Depth {}) -----", depth);
             }
             SolveEvent::WorkerStart { .. } => {}
             SolveEvent::MaskComplete { .. } => {}

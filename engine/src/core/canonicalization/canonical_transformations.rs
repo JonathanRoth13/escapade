@@ -1,4 +1,4 @@
-use crate::common::transform::Transformation;
+use crate::core::canonicalization::transform::Transformation;
 
 // Transformation arrays named by bitmask:
 // Bit 0 = Identity, Bit 1 = Rotate90, Bit 2 = Rotate180, Bit 3 = Rotate270

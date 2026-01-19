@@ -8,7 +8,7 @@ use std::{
 };
 
 use crate::{
-    common::MachineSpecs,
+    core::MachineSpecs,
     solve::{
         events::SolveEvent, logger::EventLogger, worker::worker_root, worker_context::WorkerContext,
     },
@@ -31,31 +31,31 @@ struct ResumeConfigEntry {
     starting_positions: u64,
 }
 
-/// Canonical position counts for each layer.
-/// Layer 16 is not yet computed.
-const LAYER_COUNTS: [u64; 17] = [
-    1,               // Layer 0: Empty board
-    1,               // Layer 1: Empty board
-    12,              // Layer 2
-    462,             // Layer 3
-    13_013,          // Layer 4
-    395_640,         // Layer 5
-    8_799_099,       // Layer 6
-    154_965_078,     // Layer 7
-    1_869_817_599,   // Layer 8
-    16_039_232_376,  // Layer 9
-    89_263_657_952,  // Layer 10
-    327_861_202_104, // Layer 11
-    706_899_182_360, // Layer 12
-    895_462_653_600, // Layer 13 (peak)
-    523_611_333_864, // Layer 14
-    147_948_108_768, // Layer 15
-    10_029_506_543,  // Layer 16
+/// Canonical position counts for each depth.
+/// Depth 16 is not yet computed.
+const DEPTH_COUNTS: [u64; 17] = [
+    1,               // Depth 0: Empty board
+    1,               // Depth 1: Empty board
+    12,              // Depth 2
+    462,             // Depth 3
+    13_013,          // Depth 4
+    395_640,         // Depth 5
+    8_799_099,       // Depth 6
+    154_965_078,     // Depth 7
+    1_869_817_599,   // Depth 8
+    16_039_232_376,  // Depth 9
+    89_263_657_952,  // Depth 10
+    327_861_202_104, // Depth 11
+    706_899_182_360, // Depth 12
+    895_462_653_600, // Depth 13 (peak)
+    523_611_333_864, // Depth 14
+    147_948_108_768, // Depth 15
+    10_029_506_543,  // Depth 16
 ];
 
 #[allow(clippy::too_many_arguments)]
 pub fn run(
-    layer: u32,
+    depth: u32,
     shard_bits: u8,
     reserve_os: f64,
     workers_opt: Option<u32>,
@@ -64,8 +64,8 @@ pub fn run(
     resume_config_path: Option<PathBuf>,
     tablebase_dir: Option<PathBuf>,
 ) -> anyhow::Result<()> {
-    if layer > 16 {
-        return Err(anyhow::anyhow!("Invalid layer: {} (must be 0-16)", layer));
+    if depth > 16 {
+        return Err(anyhow::anyhow!("Invalid depth: {} (must be 0-16)", depth));
     }
 
     // Load tablebase if provided (shared across all workers)
@@ -73,10 +73,10 @@ pub fn run(
         Some(ref path) => {
             eprintln!("Loading tablebase from {}...", path.display());
             let tb = TablebaseIndex::load_from_dir(path)?;
-            let available = tb.available_layers();
-            let loaded_layers: Vec<usize> = (0..18).filter(|&i| available[i]).collect();
+            let available = tb.available_depths();
+            let loaded_depths: Vec<usize> = (0..18).filter(|&i| available[i]).collect();
             let tb_mem = tb.memory_usage();
-            eprintln!("Loaded tablebase layers: {:?}", loaded_layers);
+            eprintln!("Loaded tablebase depths: {:?}", loaded_depths);
             eprintln!(
                 "Tablebase memory usage: {:.2} GiB",
                 tb_mem as f64 / (1024.0 * 1024.0 * 1024.0)
@@ -86,7 +86,7 @@ pub fn run(
         None => (None, 0),
     };
 
-    let total_positions = LAYER_COUNTS[layer as usize];
+    let total_positions = DEPTH_COUNTS[depth as usize];
 
     let specs = MachineSpecs::probe();
     let available_memory = specs.available_memory(reserve_os);
@@ -156,14 +156,14 @@ pub fn run(
 
     if is_resuming {
         let _ = event_tx.send(SolveEvent::RunResume {
-            layer,
+            depth,
             workers,
             shard_bits,
             timestamp: SystemTime::now(),
         });
     } else {
         let _ = event_tx.send(SolveEvent::RunStart {
-            layer,
+            depth,
             workers,
             shard_bits,
             timestamp: SystemTime::now(),
@@ -206,7 +206,7 @@ pub fn run(
             worker_root(
                 &mut context,
                 workers,
-                layer as usize,
+                depth as usize,
                 tablebase_clone.as_deref(),
             )
         });
