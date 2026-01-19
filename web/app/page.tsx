@@ -280,48 +280,46 @@ export default function Home() {
 
               {/* Tab Content */}
               {activeTab === "overview" && (
-                <>
-                  {/* Notification Area - takes all space up to the line */}
-                  <div className="flex-1 mb-6 flex items-center justify-center">
-                    <div className="space-y-3 text-center">
+                <div className="flex-1 flex flex-col">
+                  {/* Notification Area */}
+                  <div className="mb-4 flex items-center justify-center">
+                    <div className="space-y-2 text-center">
                       {/* Game Over States */}
                       {gameState.outcome === "player_win" && (
                         <>
-                          <p className="text-5xl font-bold text-gray-900">
+                          <p className="text-4xl font-bold text-gray-900">
                             Quarto!
                           </p>
-                          <p className="text-3xl font-bold text-gray-900">
+                          <p className="text-2xl font-bold text-gray-900">
                             Player Wins
                           </p>
                         </>
                       )}
                       {gameState.outcome === "engine_win" && (
                         <>
-                          <p className="text-5xl font-bold text-gray-900">
+                          <p className="text-4xl font-bold text-gray-900">
                             Quarto!
                           </p>
-                          <p className="text-3xl font-bold text-gray-900">
+                          <p className="text-2xl font-bold text-gray-900">
                             Engine Wins
                           </p>
                         </>
                       )}
                       {gameState.outcome === "draw" && (
-                        <>
-                          <p className="text-5xl font-bold text-gray-900">
-                            Draw
-                          </p>
-                        </>
+                        <p className="text-4xl font-bold text-gray-900">
+                          Draw
+                        </p>
                       )}
 
                       {/* During Gameplay */}
                       {!gameState.outcome && (
                         <>
                           {!gameState.isBoardLocked ? (
-                            <p className="text-4xl font-bold text-gray-800">
+                            <p className="text-3xl font-bold text-gray-800">
                               Place Piece
                             </p>
                           ) : !gameState.isRightPanelLocked ? (
-                            <p className="text-4xl font-bold text-gray-800">
+                            <p className="text-3xl font-bold text-gray-800">
                               Select Piece
                             </p>
                           ) : null}
@@ -329,7 +327,75 @@ export default function Home() {
                       )}
                     </div>
                   </div>
-                </>
+
+                  {/* Middle Section - Piece Display or Play Again */}
+                  <div className="flex-1 flex items-center justify-center px-2">
+                    {gameState.outcome ? (
+                      <div className="border-2 border-gray-300 rounded-lg p-6 bg-white shadow-lg w-full">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-3 text-center">
+                          Play Again
+                        </h3>
+                        <div className="flex flex-col gap-2">
+                          <button
+                            onClick={() => {
+                              dispatch({ type: "RESET" });
+                              startGame("first");
+                            }}
+                            className="w-full px-6 py-3 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
+                          >
+                            Go First
+                          </button>
+                          <button
+                            onClick={() => {
+                              dispatch({ type: "RESET" });
+                              startGame("second");
+                            }}
+                            className="w-full px-6 py-3 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
+                          >
+                            Go Second
+                          </button>
+                        </div>
+                      </div>
+                    ) : gameState.pieceToPlace !== undefined ? (
+                      <PieceInHandDisplay pieceId={gameState.pieceToPlace} />
+                    ) : null}
+                  </div>
+
+                  {/* Bottom Section - Always Fixed */}
+                  <div className="mt-auto">
+                    {/* Engine Strength */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Engine Strength: {gameState.engineStrength}
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={gameState.engineStrength}
+                        onChange={(e) =>
+                          dispatch({
+                            type: "SET_STRENGTH",
+                            strength: Number(e.target.value),
+                          })
+                        }
+                        className="w-full accent-gray-700"
+                      />
+                      <div className="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>Random</span>
+                        <span>Perfect</span>
+                      </div>
+                    </div>
+
+                    {/* Return to Title */}
+                    <button
+                      onClick={handleReturnToTitle}
+                      className="w-full px-4 py-2 bg-gray-600 text-white rounded font-medium hover:bg-gray-700 transition-colors"
+                    >
+                      Return to Title Screen
+                    </button>
+                  </div>
+                </div>
               )}
 
               {activeTab === "history" && (
@@ -364,75 +430,6 @@ export default function Home() {
                   )}
                 </div>
               )}
-
-              {activeTab === "overview" && (
-                <>
-                  <hr className="border-gray-300 mb-6" />
-
-                  {/* Play Again Options - Conditional */}
-                  {gameState.outcome ? (
-                    <div className="border-2 border-gray-300 rounded-lg p-6 bg-white shadow-lg mb-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-3 text-center">
-                        Play Again
-                      </h3>
-                      <div className="flex flex-col gap-2">
-                        <button
-                          onClick={() => {
-                            dispatch({ type: "RESET" });
-                            startGame("first");
-                          }}
-                          className="w-full px-6 py-3 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
-                        >
-                          Go First
-                        </button>
-                        <button
-                          onClick={() => {
-                            dispatch({ type: "RESET" });
-                            startGame("second");
-                          }}
-                          className="w-full px-6 py-3 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
-                        >
-                          Go Second
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="mb-6" style={{ height: "168px" }}></div>
-                  )}
-
-                  {/* Engine Strength */}
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Engine Strength: {gameState.engineStrength}
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={gameState.engineStrength}
-                      onChange={(e) =>
-                        dispatch({
-                          type: "SET_STRENGTH",
-                          strength: Number(e.target.value),
-                        })
-                      }
-                      className="w-full accent-gray-700"
-                    />
-                    <div className="flex justify-between text-xs text-gray-500 mt-1">
-                      <span>Random</span>
-                      <span>Perfect</span>
-                    </div>
-                  </div>
-
-                  {/* Return to Title */}
-                  <button
-                    onClick={handleReturnToTitle}
-                    className="w-full px-4 py-2 bg-gray-600 text-white rounded font-medium hover:bg-gray-700 transition-colors"
-                  >
-                    Return to Title Screen
-                  </button>
-                </>
-              )}
             </>
           )}
         </div>
@@ -461,9 +458,7 @@ export default function Home() {
         <div
           className={
             gameState.mode !== "landing"
-              ? gameState.isRightPanelTray
-                ? "bg-white rounded-lg shadow-md p-6"
-                : "bg-white rounded-lg shadow-md flex items-center justify-center"
+              ? "bg-white rounded-lg shadow-md p-6"
               : ""
           }
           style={{
@@ -471,16 +466,13 @@ export default function Home() {
             height: "min(50vw, calc(100vh - 7rem - 3vw))",
           }}
         >
-          {gameState.mode !== "landing" &&
-            (gameState.isRightPanelTray ? (
-              <PieceTray
-                enabled={!gameState.isRightPanelLocked}
-                pieces={gameState.tray}
-                onPieceClick={handlePieceClick}
-              />
-            ) : (
-              <PieceInHandDisplay pieceId={gameState.pieceToPlace ?? 0} />
-            ))}
+          {gameState.mode !== "landing" && (
+            <PieceTray
+              enabled={!gameState.isRightPanelLocked}
+              pieces={gameState.tray}
+              onPieceClick={handlePieceClick}
+            />
+          )}
         </div>
       </main>
     </div>
