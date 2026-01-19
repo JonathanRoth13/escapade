@@ -14,8 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Escapade - A Quarto Engine",
-  description:
-    "A solved Quarto engine. Play against optimal play or analyze any position.",
+  description: "Play against a Quarto engine.",
   icons: {
     icon: [
       { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
