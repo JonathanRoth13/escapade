@@ -9,41 +9,18 @@ pub struct Node {
 impl Node {
     #[inline]
     pub fn to_bytes(self) -> [u8; 11] {
-        let p = u16::to_be_bytes(self.board.occupancy);
-        let a3 = u16::to_be_bytes(self.board.attribute_masks[3]);
-        let a2 = u16::to_be_bytes(self.board.attribute_masks[2]);
-        let a1 = u16::to_be_bytes(self.board.attribute_masks[1]);
-        let a0 = u16::to_be_bytes(self.board.attribute_masks[0]);
+        let b = self.board.to_bytes();
         [
-            p[0],
-            p[1],
-            a3[0],
-            a3[1],
-            a2[0],
-            a2[1],
-            a1[0],
-            a1[1],
-            a0[0],
-            a0[1],
+            b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7], b[8], b[9],
             self.piece_to_place << 4, // Store in upper 4 bits
         ]
     }
 
     #[inline]
     pub fn from_bytes(x: &[u8; 11]) -> Self {
-        let occupancy = u16::from_be_bytes([x[0], x[1]]);
-        let a3 = u16::from_be_bytes([x[2], x[3]]);
-        let a2 = u16::from_be_bytes([x[4], x[5]]);
-        let a1 = u16::from_be_bytes([x[6], x[7]]);
-        let a0 = u16::from_be_bytes([x[8], x[9]]);
-        let piece_to_place = x[10] >> 4; // Extract from upper 4 bits
-
         Self {
-            board: Board {
-                occupancy,
-                attribute_masks: [a0, a1, a2, a3],
-            },
-            piece_to_place,
+            board: Board::from_bytes(x[0..10].try_into().unwrap()),
+            piece_to_place: x[10] >> 4, // Extract from upper 4 bits
         }
     }
 
@@ -53,20 +30,9 @@ impl Node {
             "expected 11 bytes for Node, got {}",
             bytes.len()
         );
-
-        let occupancy = u16::from_be_bytes([bytes[0], bytes[1]]);
-        let a3 = u16::from_be_bytes([bytes[2], bytes[3]]);
-        let a2 = u16::from_be_bytes([bytes[4], bytes[5]]);
-        let a1 = u16::from_be_bytes([bytes[6], bytes[7]]);
-        let a0 = u16::from_be_bytes([bytes[8], bytes[9]]);
-        let piece_to_place = bytes[10] >> 4; // Extract from upper 4 bits
-
         Self {
-            board: Board {
-                occupancy,
-                attribute_masks: [a0, a1, a2, a3],
-            },
-            piece_to_place,
+            board: Board::from_bytes(bytes[0..10].try_into().unwrap()),
+            piece_to_place: bytes[10] >> 4, // Extract from upper 4 bits
         }
     }
 }

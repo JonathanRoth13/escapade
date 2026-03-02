@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { analyzePosition } from "../lib/engine";
+import { analyzePosition } from "./engine";
 import { processAnalysis } from "./processor";
 
 export async function GET(request: NextRequest) {

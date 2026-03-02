@@ -69,7 +69,7 @@ export default function Home() {
           type: "ENGINE_QUARTO",
           board: data.board,
           tray: data.tray,
-          boarder: data.highlighted,
+          highlighted: data.highlighted,
           outcome: "engine_win",
           description: data.description,
           analysis: data.analysis,
@@ -114,15 +114,6 @@ export default function Home() {
     });
 
     if (!matchingMove) {
-        /*
-        console.log("NO MOVE FOUND", {
-        pieceId,
-        square: gameState.square,
-        movesCount: gameState.moves?.length,
-        moves: gameState.moves,
-      });
-      */
-      // time to display an error message
       return;
     }
 
@@ -155,7 +146,7 @@ export default function Home() {
         type: "PLAYER_QUARTO",
         board: board.map((cell) => cell.piece),
         tray: tray.map((t) => t.available),
-        boarder: highlighted,
+        highlighted: highlighted,
         description: matchingMove.description,
         analysis: undefined,
       });
@@ -194,16 +185,11 @@ export default function Home() {
       const data = await response.json();
       handleApiResponse(data);
     } catch {
-      //console.error('Error after placing piece');
+      // error handling
     } finally {
       setLoading(false);
     }
 
-    if (matchingMove) {
-      console.log("MOVE:", matchingMove);
-    } else {
-      console.error("No matching move found");
-    }
   };
 
   // ============================================================================
@@ -246,36 +232,19 @@ export default function Home() {
             <>
               {/* Tabs */}
               <div className="flex border-b border-gray-300 mb-4">
-                <button
-                  onClick={() => setActiveTab("overview")}
-                  className={`flex-1 px-4 py-2 text-sm font-medium ${
-                    activeTab === "overview"
-                      ? "text-gray-900 border-b-2 border-gray-900"
-                      : "text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  Overview
-                </button>
-                <button
-                  onClick={() => setActiveTab("history")}
-                  className={`flex-1 px-4 py-2 text-sm font-medium ${
-                    activeTab === "history"
-                      ? "text-gray-900 border-b-2 border-gray-900"
-                      : "text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  History
-                </button>
-                <button
-                  onClick={() => setActiveTab("analysis")}
-                  className={`flex-1 px-4 py-2 text-sm font-medium ${
-                    activeTab === "analysis"
-                      ? "text-gray-900 border-b-2 border-gray-900"
-                      : "text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  Analysis
-                </button>
+                {(["overview", "history", "analysis"] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`flex-1 px-4 py-2 text-sm font-medium capitalize ${
+                      activeTab === tab
+                        ? "text-gray-900 border-b-2 border-gray-900"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
               </div>
 
               {/* Tab Content */}

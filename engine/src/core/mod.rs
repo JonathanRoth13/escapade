@@ -29,3 +29,9 @@ pub use hashing::{
 };
 pub use machine_specs::MachineSpecs;
 pub use validation::validate_node;
+
+/// Isolate the lowest set bit in a bitmask.
+#[inline(always)]
+pub fn lowest_bit(mask: u16) -> u16 {
+    mask & mask.wrapping_neg()
+}

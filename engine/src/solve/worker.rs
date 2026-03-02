@@ -1,7 +1,7 @@
 use crate::core::{
     Board, DEPTH_0_SENTINEL, Node, OCCUPANCY_MASKS, ROOT_BOARD, Record,
     evaluate_with_remaining_pieces, hash_shard_node, hash_worker_node,
-    is_node_canonical_under_attribute_relabeling_only,
+    is_node_canonical_under_attribute_relabeling_only, lowest_bit,
 };
 use crate::solve::worker_context::WorkerContext;
 use crate::tablebase::TablebaseIndex;
@@ -220,9 +220,4 @@ fn backtrack_split(
     }
 
     Ok(())
-}
-
-#[inline(always)]
-fn lowest_bit(mask: u16) -> u16 {
-    mask & mask.wrapping_neg()
 }

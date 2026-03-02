@@ -1,7 +1,7 @@
 use super::parsing::{format_node_grid, format_node_hex};
 use crate::core::{
     Board, DEPTH_0_SENTINEL, Node, canonicalize, compute_unused_pieces_mask, evaluate,
-    outcome_to_sort_score,
+    lowest_bit, outcome_to_sort_score,
 };
 use crate::core::{LINE_MASKS, check_line_mask};
 use crate::tablebase::TablebaseIndex;
@@ -21,7 +21,7 @@ pub struct Move {
 #[derive(Serialize, Clone)]
 pub struct Quarto {
     intersection: [u8; 4],
-    attribute: String,
+    attribute: &'static str,
 }
 
 #[derive(Serialize)]
@@ -292,7 +292,7 @@ fn extract_square_indices(line_mask: u16) -> [u8; 4] {
     squares
 }
 
-fn get_quarto_attribute(board: &Board, line_mask: u16) -> Vec<String> {
+fn get_quarto_attribute(board: &Board, line_mask: u16) -> Vec<&'static str> {
     // Bit encoding:
     // bit 0 (value 1): Hollow (1) vs Solid (0)
     // bit 1 (value 2): Short (1) vs Tall (0)
@@ -304,27 +304,22 @@ fn get_quarto_attribute(board: &Board, line_mask: u16) -> Vec<String> {
         let attr_mask = board.attribute_masks[attr];
         if (attr_mask & line_mask) == line_mask {
             attributes.push(match attr {
-                0 => "hollow".to_string(),
-                1 => "short".to_string(),
-                2 => "square".to_string(),
-                3 => "dark".to_string(),
+                0 => "hollow",
+                1 => "short",
+                2 => "square",
+                3 => "dark",
                 _ => unreachable!(),
             });
         } else if (attr_mask & line_mask) == 0 {
             attributes.push(match attr {
-                0 => "solid".to_string(),
-                1 => "tall".to_string(),
-                2 => "round".to_string(),
-                3 => "light".to_string(),
+                0 => "solid",
+                1 => "tall",
+                2 => "round",
+                3 => "light",
                 _ => unreachable!(),
             });
         }
     }
 
     attributes
-}
-
-#[inline(always)]
-fn lowest_bit(mask: u16) -> u16 {
-    mask & mask.wrapping_neg()
 }

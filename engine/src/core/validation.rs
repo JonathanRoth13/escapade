@@ -80,14 +80,7 @@ pub fn validate_board(board: &Board) -> Result<(), ValidationError> {
         let cell_bit = remaining_occupied & remaining_occupied.wrapping_neg();
         remaining_occupied ^= cell_bit;
 
-        let mut piece_id: u8 = 0;
-        for (i, &attr_mask) in board.attribute_masks.iter().enumerate() {
-            if (attr_mask & cell_bit) != 0 {
-                piece_id |= 1u8 << i;
-            }
-        }
-
-        let piece_bit = 1u16 << piece_id;
+        let piece_bit = 1u16 << board.piece_at(cell_bit);
         if (used_pieces & piece_bit) != 0 {
             return Err(ValidationError::DuplicatePieceId);
         }
@@ -129,14 +122,7 @@ pub fn validate_node(node: &Node) -> Result<(), ValidationError> {
             let cell_bit = remaining_occupied & remaining_occupied.wrapping_neg();
             remaining_occupied ^= cell_bit;
 
-            let mut piece_id: u8 = 0;
-            for (i, &attr_mask) in node.board.attribute_masks.iter().enumerate() {
-                if (attr_mask & cell_bit) != 0 {
-                    piece_id |= 1u8 << i;
-                }
-            }
-
-            if piece_id == node.piece_to_place {
+            if node.board.piece_at(cell_bit) == node.piece_to_place {
                 return Err(ValidationError::PieceToPlaceAlreadyUsed);
             }
         }

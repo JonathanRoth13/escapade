@@ -1,5 +1,5 @@
 use crate::{
-    core::{DEPTH_0_SENTINEL, DEPTH_1_CANONICAL, Node, canonicalize, check_after_place},
+    core::{DEPTH_0_SENTINEL, DEPTH_1_CANONICAL, Node, canonicalize, check_after_place, lowest_bit},
     tablebase::TablebaseIndex,
 };
 
@@ -194,11 +194,6 @@ fn negamax(
     best_score
 }
 
-#[inline(always)]
-fn lowest_bit(mask: u16) -> u16 {
-    mask & mask.wrapping_neg()
-}
-
 /// Compute a 16-bit mask of unused pieces (1 bit per piece-id 0..15).
 #[inline]
 pub fn compute_unused_pieces_mask(node: &Node) -> u16 {
@@ -212,21 +207,7 @@ pub fn compute_unused_pieces_mask(node: &Node) -> u16 {
         let square = lowest_bit(occupied);
         occupied ^= square;
 
-        let mut piece_id: u8 = 0;
-        if (node.board.attribute_masks[0] & square) != 0 {
-            piece_id |= 1;
-        }
-        if (node.board.attribute_masks[1] & square) != 0 {
-            piece_id |= 2;
-        }
-        if (node.board.attribute_masks[2] & square) != 0 {
-            piece_id |= 4;
-        }
-        if (node.board.attribute_masks[3] & square) != 0 {
-            piece_id |= 8;
-        }
-
-        let piece_bit: u16 = 1u16 << piece_id;
+        let piece_bit: u16 = 1u16 << node.board.piece_at(square);
         unused_mask ^= piece_bit;
     }
 

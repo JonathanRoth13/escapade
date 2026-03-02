@@ -273,7 +273,7 @@ pub fn run(
             let report_interval = 10_000_000;
             let mut local_count = 0usize;
 
-            for _i in 0..records_this_worker {
+            for _ in 0..records_this_worker {
                 let mut record = [0u8; 11];
                 reader
                     .read_exact(&mut record)

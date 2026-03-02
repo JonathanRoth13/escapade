@@ -34,19 +34,9 @@ fn parse_node_hex(s: &str) -> Result<Node> {
             .map_err(|_| anyhow!("Invalid hex byte: {}", hex_byte))?;
     }
 
-    let occupancy = u16::from_be_bytes([bytes[0], bytes[1]]);
-    let a3 = u16::from_be_bytes([bytes[2], bytes[3]]);
-    let a2 = u16::from_be_bytes([bytes[4], bytes[5]]);
-    let a1 = u16::from_be_bytes([bytes[6], bytes[7]]);
-    let a0 = u16::from_be_bytes([bytes[8], bytes[9]]);
-    let piece_to_place = bytes[10] >> 4; // Upper 4 bits
-
     Ok(Node {
-        board: Board {
-            occupancy,
-            attribute_masks: [a0, a1, a2, a3],
-        },
-        piece_to_place,
+        board: Board::from_bytes(bytes[0..10].try_into().unwrap()),
+        piece_to_place: bytes[10] >> 4, // Upper 4 bits
     })
 }
 
@@ -146,13 +136,7 @@ pub fn format_node_grid(node: &Node) -> String {
     for pos in 0..16 {
         let bit = 1u16 << pos;
         if (node.board.occupancy & bit) != 0 {
-            let mut piece_id = 0u8;
-            for (i, &mask) in node.board.attribute_masks.iter().enumerate() {
-                if (mask & bit) != 0 {
-                    piece_id |= 1 << i;
-                }
-            }
-            result.push_str(&format!("{:X}", piece_id));
+            result.push_str(&format!("{:X}", node.board.piece_at(bit)));
         } else {
             result.push(' ');
         }

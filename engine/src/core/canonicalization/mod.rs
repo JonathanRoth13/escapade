@@ -1,4 +1,5 @@
 mod canonical_transformations;
+#[allow(clippy::module_inception)]
 mod canonicalization;
 mod transform;
 
