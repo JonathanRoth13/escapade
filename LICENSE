@@ -1,5 +1,5 @@
-Quarto Solver License (QSL) v1.0
-Copyright (c) 2025 Jonathan Roth
+Escapade License v1.0
+Copyright (c) 2026 Jonathan Roth
 
 1. Definitions.
    "Software" means the source code and binaries in this repository.
@@ -13,7 +13,7 @@ Copyright (c) 2025 Jonathan Roth
 3. Commercial Use Requires Permission.
    Any use of the Software, or Derivative Works thereof, **for commercial purposes**
    (including internal use that contributes to a revenue-generating activity) requires
-   a **separate paid commercial license** from the copyright holder. 
+   a **separate paid commercial license** from the copyright holder.
    To obtain one, contact: jonathanroth@protonmail.com
 
 4. No Sublicensing for Commercial Use.
@@ -37,4 +37,3 @@ Copyright (c) 2025 Jonathan Roth
 8. Compatibility.
    This license is **not** an OSI-approved open source license. If you need OSI compliance,
    please negotiate a commercial or dual license.
-
