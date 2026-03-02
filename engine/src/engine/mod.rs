@@ -1,5 +1,5 @@
 mod analyze;
 mod parsing;
-mod repl;
+mod server;
 
-pub use repl::run;
+pub use server::run;

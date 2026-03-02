@@ -12,7 +12,8 @@ mod tablebase;
 use clap::Parser;
 use cli::{Cli, Commands};
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let cli = Cli::parse();
     match cli.cmd {
         Commands::Solve(cmd) => {
@@ -63,7 +64,7 @@ fn main() {
             } else {
                 None
             };
-            engine::run(tablebase);
+            engine::run(tablebase, &cmd.listen).await;
         }
     }
 }

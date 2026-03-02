@@ -116,6 +116,10 @@ pub struct IndexCommand {
 #[derive(Args, Debug)]
 pub struct EngineCommand {
     /// Directory containing tablebase files
-    #[arg(long, value_hint = ValueHint::DirPath)]
+    #[arg(long, env = "TABLEBASE_DIR", value_hint = ValueHint::DirPath)]
     pub tablebase_dir: Option<PathBuf>,
+
+    /// Address to listen on
+    #[arg(long, env = "LISTEN_ADDR", default_value = "0.0.0.0:8080")]
+    pub listen: String,
 }

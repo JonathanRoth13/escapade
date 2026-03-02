@@ -1,0 +1,18 @@
+services:
+  engine:
+    build: engine/
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  web:
+    build: web/
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      engine:
+        condition: service_healthy
