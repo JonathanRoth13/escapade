@@ -1,6 +1,6 @@
 # Escapade
 
-A Quarto engine that solves the complete game tree using tablebase generation for sub-microsecond lookups. Written in Rust for performance and ergonomic bit-array representations of the board. [Play it here.](https://roth13.com)
+A Quarto engine that solves the complete game tree using tablebase generation for sub-microsecond lookups. Written in Rust for performance and ergonomic bit-array representations of the board. [Play it here.](https://roth13.com) You can run this locally using `docker compose up`.
 
 ## Quarto
 
@@ -58,4 +58,4 @@ Once depth 10 was indexed, I solved depth 9. Positions at depth 9 only need to s
 
 ## Web App
 
-The engine can run in interactive mode (`escapade engine`), reading positions from stdin and returning JSON with every legal move and its outcome. A Next.js app spawns this as a subprocess and acts as a thin orchestration layer between the engine and the browser. When the frontend sends a game state, the backend forwards it to the engine, receives the full move analysis, picks the AI's move, and computes the render state for the board.  
+The engine runs as an HTTP server (`escapade engine`) returning JSON with every legal move and its outcome. A Next.js app communicates with it over the network. When the frontend sends a game state, the backend forwards it to the engine, receives the full move analysis, picks the AI's move, and computes the render state for the board. The two services run as separate containers via Docker Compose.
