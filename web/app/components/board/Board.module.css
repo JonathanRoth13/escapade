@@ -1,0 +1,140 @@
+.board {
+  --board-square: #e9ecef;
+  --board-line: #c3c9cf;
+  --board-line-width: 1px;
+  --board-radius: 4px;
+
+  --mark-last-move: rgb(20 85 30 / 0.12);
+  --mark-hover: rgb(20 85 30 / 0.22);
+
+  --ring-duration: 250ms;
+  --mark-duration: 200ms;
+
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  /* The grid lines: squares sit on the line colour, separated by the gap. */
+  gap: var(--board-line-width);
+  padding: var(--board-line-width);
+  background: var(--board-line);
+  /* Not clipped, so piece tooltips can extend past the edge; the corner
+     squares and their marks carry the rounding instead. */
+  border-radius: var(--board-radius);
+  box-shadow:
+    0 2px 2px 0 rgb(0 0 0 / 0.14),
+    0 3px 1px -2px rgb(0 0 0 / 0.2),
+    0 1px 5px 0 rgb(0 0 0 / 0.12);
+
+  width: 100%;
+  aspect-ratio: 1;
+  user-select: none;
+  transition: box-shadow var(--ring-duration) ease;
+}
+
+/* Ring in the colour of whoever acts here (`actor`), so the eye follows the
+   turn around the screen. It pops in each time it arrives. */
+.board[data-actor="you"] {
+  --ring: var(--accent-you);
+}
+
+.board[data-actor] {
+  box-shadow:
+    0 0 0 3px var(--ring),
+    0 0 20px 2px color-mix(in srgb, transparent, var(--ring) 35%);
+  animation: ring-in 450ms ease-out;
+}
+
+@keyframes ring-in {
+  from {
+    box-shadow:
+      0 0 0 0 var(--ring),
+      0 0 0 0 transparent;
+  }
+  60% {
+    box-shadow:
+      0 0 0 6px var(--ring),
+      0 0 28px 6px color-mix(in srgb, transparent, var(--ring) 45%);
+  }
+}
+
+.square {
+  position: relative; /* anchors marks, piece and tooltip */
+  border: 0;
+  padding: 0;
+  background: var(--board-square);
+  cursor: default;
+}
+
+/* Rounded outer corners follow the board's radius. */
+.square:nth-child(1) {
+  border-top-left-radius: var(--board-radius);
+}
+.square:nth-child(4) {
+  border-top-right-radius: var(--board-radius);
+}
+.square:nth-child(13) {
+  border-bottom-left-radius: var(--board-radius);
+}
+.square:nth-child(16) {
+  border-bottom-right-radius: var(--board-radius);
+}
+
+.square:enabled {
+  cursor: pointer;
+}
+
+/* ---------- Marks ---------- */
+
+.mark {
+  border-radius: inherit; /* follows the corner squares' rounding */
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--mark-duration) ease;
+}
+
+.mark[data-on="true"] {
+  opacity: 1;
+}
+
+.mark[data-mark="last-move"] {
+  background: var(--mark-last-move);
+}
+
+/* Placement dot, shown only on the empty square under the cursor. */
+.hover {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  background: radial-gradient(var(--mark-hover) 11%, transparent 12%);
+  transition: opacity var(--mark-duration) ease;
+}
+
+.square:enabled:hover .hover {
+  opacity: 1;
+}
+
+/* ---------- Pieces ---------- */
+
+.piece {
+  position: absolute;
+  inset: 5%;
+  width: 90%;
+  height: 90%;
+  object-fit: contain;
+  pointer-events: none;
+  animation: piece-in 220ms ease-out;
+}
+
+@keyframes piece-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

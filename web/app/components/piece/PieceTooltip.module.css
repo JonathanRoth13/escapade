@@ -1,0 +1,28 @@
+/* Centred above the piece's container (its top edge, plus a small gap). */
+.tooltip {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  z-index: 30;
+  translate: -50% calc(-100% - 6px);
+
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  background: #1f2937;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+/* Show while the piece's container is hovered, after a short pause so
+   sweeping the cursor across pieces doesn't flash labels. */
+:hover > .tooltip {
+  opacity: 1;
+  transition-delay: 300ms;
+}
