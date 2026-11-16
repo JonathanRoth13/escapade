@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Board from "./components/board/Board";
 import type { BoardPieces } from "./components/board/types";
+import Feedback from "./components/feedback/Feedback";
 import HandZone from "./components/hand/HandZone";
 import GameLayout from "./components/layout/GameLayout";
 import PhaseIndicator from "./components/phase/PhaseIndicator";
@@ -64,6 +65,7 @@ export default function Home() {
 
   return (
     <GameLayout
+      headerActions={<Feedback />}
       tray={
         <Tray
           available={available}

@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Everything is sized in rem, so this scales the whole page. */
+html {
+  font-size: 110%;
+}
+
 body {
   background: #f3f4f6;
   color: #171717;

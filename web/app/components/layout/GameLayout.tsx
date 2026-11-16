@@ -7,17 +7,20 @@ export default function GameLayout({
   opponent,
   phase,
   you,
+  headerActions,
 }: {
   tray: ReactNode;
   board: ReactNode;
   opponent: ReactNode;
   phase: ReactNode;
   you: ReactNode;
+  headerActions: ReactNode;
 }) {
   return (
     <div className={styles.page}>
       <header className={styles.header}>
         <span className={styles.title}>ESCAPADE</span>
+        <div className={styles.headerActions}>{headerActions}</div>
       </header>
       <main className={styles.main}>
         <div className={styles.layout}>
