@@ -1,0 +1,81 @@
+.zone {
+  --accent: var(--accent-you);
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  /* Same colour as the tray, so the held piece reads as sitting on one. */
+  background: #e9ecef;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+  transition:
+    box-shadow 250ms ease,
+    background-color 250ms ease;
+}
+
+/* Opponent's label sits below the tile and the player's above it, so the
+   tiles sit nearest the board's top and bottom edges respectively. */
+.zone[data-side="opponent"] {
+  --accent: var(--accent-opponent);
+  flex-direction: column-reverse;
+}
+
+.zone[data-active="true"] {
+  background: color-mix(in srgb, #e9ecef, var(--accent) 8%);
+  /* Full ring in the side's colour, matching the live board and tray. */
+  box-shadow:
+    0 0 0 3px var(--accent),
+    0 0 20px 2px color-mix(in srgb, transparent, var(--accent) 35%);
+  animation: ring-in 450ms ease-out;
+}
+
+@keyframes ring-in {
+  from {
+    box-shadow:
+      0 0 0 0 var(--accent),
+      0 0 0 0 transparent;
+  }
+  60% {
+    box-shadow:
+      0 0 0 6px var(--accent),
+      0 0 28px 6px color-mix(in srgb, transparent, var(--accent) 45%);
+  }
+}
+
+.label {
+  font-weight: 600;
+  color: #6b7280;
+  transition: color 250ms ease;
+}
+
+.zone[data-active="true"] .label {
+  color: var(--accent);
+}
+
+.slot {
+  position: relative; /* anchors the piece and tooltip */
+  width: 4.5rem;
+  aspect-ratio: 1;
+}
+
+.piece {
+  position: absolute;
+  inset: 8%;
+  width: 84%;
+  height: 84%;
+  object-fit: contain;
+  animation: piece-in 220ms ease-out;
+}
+
+@keyframes piece-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

@@ -1,0 +1,121 @@
+.tray {
+  --tray-square: #e9ecef;
+  --tray-line: #c3c9cf;
+  --tray-line-width: 1px;
+  --tray-radius: 4px;
+
+  --mark-hover: rgb(20 85 30 / 0.12);
+
+  --ring-duration: 250ms;
+  --mark-duration: 200ms;
+
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  /* One surface with an outer edge and no inner dividers. Slots are
+     transparent, so nothing needs clipping to the rounded corners and piece
+     tooltips can extend past the edge. */
+  background: var(--tray-square);
+  border: var(--tray-line-width) solid var(--tray-line);
+  border-radius: var(--tray-radius);
+  box-shadow:
+    0 2px 2px 0 rgb(0 0 0 / 0.14),
+    0 3px 1px -2px rgb(0 0 0 / 0.2),
+    0 1px 5px 0 rgb(0 0 0 / 0.12);
+
+  width: 100%;
+  user-select: none;
+  transition: box-shadow var(--ring-duration) ease;
+}
+
+/* Ring in the colour of whoever acts here (`actor`), so the eye follows the
+   turn around the screen. It pops in each time it arrives. */
+.tray[data-actor="you"] {
+  --ring: var(--accent-you);
+}
+
+.tray[data-actor="opponent"] {
+  --ring: var(--accent-opponent);
+}
+
+.tray[data-actor] {
+  box-shadow:
+    0 0 0 3px var(--ring),
+    0 0 20px 2px color-mix(in srgb, transparent, var(--ring) 35%);
+  animation: ring-in 450ms ease-out;
+}
+
+@keyframes ring-in {
+  from {
+    box-shadow:
+      0 0 0 0 var(--ring),
+      0 0 0 0 transparent;
+  }
+  60% {
+    box-shadow:
+      0 0 0 6px var(--ring),
+      0 0 28px 6px color-mix(in srgb, transparent, var(--ring) 45%);
+  }
+}
+
+.slot {
+  position: relative; /* anchors marks, piece and tooltip */
+  aspect-ratio: 1;
+  transition: background-color var(--mark-duration) ease;
+}
+
+.slot:enabled {
+  cursor: pointer;
+}
+
+.slot:enabled:hover {
+  background-color: var(--mark-hover);
+}
+
+/* ---------- Marks ---------- */
+
+.mark {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--mark-duration) ease;
+}
+
+.mark[data-on="true"] {
+  opacity: 1;
+}
+
+/* Afterglow: the slot the player just picked from keeps its hover tint and
+   fades it out slowly, while the piece itself has already moved. */
+.mark[data-mark="picked"] {
+  background: var(--mark-hover);
+}
+
+.mark[data-mark="picked"][data-on="true"] {
+  animation: picked-fade 1200ms ease-out forwards;
+}
+
+@keyframes picked-fade {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* ---------- Pieces ---------- */
+
+.piece {
+  position: absolute;
+  inset: 8%;
+  width: 84%;
+  height: 84%;
+  object-fit: contain;
+  pointer-events: none;
+  transition: opacity var(--mark-duration) ease;
+}
+
+.piece[data-available="false"] {
+  opacity: 0;
+}

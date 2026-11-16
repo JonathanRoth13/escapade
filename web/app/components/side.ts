@@ -1,1 +1,1 @@
-export type Side = "you";
+export type Side = "you" | "opponent";

@@ -37,6 +37,10 @@
   --ring: var(--accent-you);
 }
 
+.board[data-actor="opponent"] {
+  --ring: var(--accent-opponent);
+}
+
 .board[data-actor] {
   box-shadow:
     0 0 0 3px var(--ring),
@@ -59,10 +63,7 @@
 
 .square {
   position: relative; /* anchors marks, piece and tooltip */
-  border: 0;
-  padding: 0;
   background: var(--board-square);
-  cursor: default;
 }
 
 /* Rounded outer corners follow the board's radius. */
