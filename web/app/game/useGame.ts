@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { PHASE, SIDE, type Phase, type Side } from "../constants";
-import type { EngineResponse, PlayerMove } from "../types/api";
+import type { EngineResponse, PlayerMove, Quarto } from "../types/api";
 import type { AnalysisResult } from "../types/engine";
 import { nextPhase, openingPhase, positionAfter, type Move } from "./position";
 
@@ -14,9 +14,25 @@ export type GameState = {
   sentMove: string | null;
   error: string | null;
   over: boolean;
-  /** The squares of the winning line(s), if the game was won. */
-  winSquares: number[];
+  winner: Side | null;
+  winLines: WinLine[];
 };
+
+export type WinLine = { squares: number[]; attributes: number[] };
+
+function toWinLines(quartos: Quarto[]): WinLine[] {
+  const lines = new Map<string, WinLine>();
+  for (const { intersection, attribute } of quartos) {
+    const key = intersection.join();
+    const line = lines.get(key) ?? {
+      squares: [...intersection],
+      attributes: [],
+    };
+    line.attributes.push(attribute);
+    lines.set(key, line);
+  }
+  return [...lines.values()];
+}
 
 /** The player's opening moves: select any piece (no placement yet). */
 const FIRST_MOVES: PlayerMove[] = Array.from({ length: 16 }, (_, piece) => ({
@@ -35,7 +51,8 @@ const INITIAL: GameState = {
   sentMove: null,
   error: null,
   over: false,
-  winSquares: [],
+  winner: null,
+  winLines: [],
 };
 
 /** What happens next, or null before the game starts and once it's over. */
@@ -75,7 +92,8 @@ function gameAfterReply(s: GameState, reply: EngineResponse): GameState {
         ...s,
         history,
         over: true,
-        winSquares: reply.highlighted.flatMap((on, sq) => (on ? [sq] : [])),
+        winner: SIDE.OPPONENT,
+        winLines: toWinLines(reply.quartos),
       };
     case "draw":
       return { ...s, history, over: true };
@@ -146,15 +164,15 @@ export function useGame({ strength }: { strength: number }) {
   const start = (first: Side) => {
     if (first === SIDE.YOU) {
       if (LOG_ENGINE) logOptions(FIRST_MOVES, null);
-      setState((s) => ({ ...s, first }));
+      setState({ ...INITIAL, first });
       return;
     }
-    setState((s) => ({
-      ...s,
+    setState({
+      ...INITIAL,
       first,
       legalMoves: [],
       sentMove: OPENING_REQUEST,
-    }));
+    });
     playEngineTurn(OPENING_REQUEST);
   };
 
@@ -197,9 +215,8 @@ export function useGame({ strength }: { strength: number }) {
           ...s,
           history,
           over: true,
-          winSquares: [
-            ...new Set(winning.quarto!.flatMap((q) => q.intersection)),
-          ],
+          winner: SIDE.YOU,
+          winLines: toWinLines(winning.quarto!),
         };
       }
       if (options.every((m) => m.piece === undefined)) {

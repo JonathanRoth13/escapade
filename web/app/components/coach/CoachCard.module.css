@@ -8,20 +8,32 @@
     0 10px 30px rgb(0 0 0 / 0.18),
     0 2px 6px rgb(0 0 0 / 0.08);
   color: #1f2937;
-  animation: card-in 300ms ease-out;
+  animation: card-in 300ms ease-out both; /* "both": hidden during any delay */
 }
 
 .title {
-  margin-bottom: 1rem;
   font-size: 1.125rem;
   font-weight: 700;
   text-align: center;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: #374151;
+  text-align: center;
+  text-wrap: balance;
 }
 
 /* A row of equal buttons. */
 .actions {
   display: flex;
   gap: 0.5rem;
+  margin-top: 1rem;
 }
 
 .button {

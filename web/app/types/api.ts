@@ -49,7 +49,6 @@ export interface EngineWinResponse {
   event: "engine_win";
   board: (number | undefined)[];
   tray: boolean[];
-  highlighted: boolean[]; // 16 squares, true = on a winning line
   quartos: Quarto[];
   description: string;
   analysis: AnalysisResult

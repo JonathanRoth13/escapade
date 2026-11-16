@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Board from "./components/board/Board";
 import type { BoardMarks } from "./components/board/types";
 import CoachCard from "./components/coach/CoachCard";
+import GameOverCard from "./components/coach/GameOverCard";
 import Feedback from "./components/feedback/Feedback";
 import HandZone from "./components/hand/HandZone";
 import GameLayout from "./components/layout/GameLayout";
@@ -32,8 +33,30 @@ export default function PlayScreen() {
   if (view.lastMove !== null) {
     boardMarks[view.lastMove] = [BOARD_MARK.LAST_MOVE];
   }
-  for (const sq of view.winSquares) {
+  for (const sq of new Set(view.winLines.flatMap((line) => line.squares))) {
     boardMarks[sq] = [...(boardMarks[sq] ?? []), BOARD_MARK.WIN_LINE];
+  }
+
+  // At most one card over the board: who goes first, or the result.
+  let coach: ReactNode = null;
+  if (game.state.first === null) {
+    coach = (
+      <CoachCard
+        title="Who goes first?"
+        actions={[
+          { label: "Go first", onClick: () => game.start(SIDE.YOU) },
+          { label: "Go second", onClick: () => game.start(SIDE.OPPONENT) },
+        ]}
+      />
+    );
+  } else if (view.ended) {
+    coach = (
+      <GameOverCard
+        winner={game.state.winner}
+        lines={view.winLines}
+        onPlayAgain={game.start}
+      />
+    );
   }
 
   const picked = view.hands[SIDE.OPPONENT];
@@ -65,20 +88,7 @@ export default function PlayScreen() {
           onSquareClick={game.placePiece}
         />
       }
-      coach={
-        game.state.first === null && (
-          <CoachCard
-            title="Who goes first?"
-            actions={[
-              { label: "Go first", onClick: () => game.start(SIDE.YOU) },
-              {
-                label: "Go second",
-                onClick: () => game.start(SIDE.OPPONENT),
-              },
-            ]}
-          />
-        )
-      }
+      coach={coach}
       opponent={
         <div className="flex flex-col gap-3">
           <HandZone

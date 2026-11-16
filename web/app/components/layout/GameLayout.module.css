@@ -86,6 +86,8 @@
   grid-area: you;
 }
 
+/* The mouse passes through to the board around the card (piece tooltips);
+   the card itself still takes clicks. */
 .coach {
   position: absolute;
   inset: 0;
@@ -93,6 +95,11 @@
   align-items: center;
   justify-content: center;
   padding: 1rem;
+  pointer-events: none;
+}
+
+.coach > * {
+  pointer-events: auto;
 }
 
 .panel {

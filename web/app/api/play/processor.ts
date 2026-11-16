@@ -126,18 +126,6 @@ function buildQuartoDescription(
   return `The opponent placed piece ${placedPieceId} on square ${placedSquare}. Quarto! ${describeQuartos(move.quarto)}`;
 }
 
-function getHighlightedSquares(move: Move): boolean[] {
-  const highlighted = new Array(16).fill(false);
-  if (!move.quarto) return highlighted;
-
-  const squares = move.quarto.flatMap((q) => q.intersection);
-  for (let i = 0; i < 16; i++) {
-    highlighted[i] = squares.includes(i);
-  }
-
-  return highlighted;
-}
-
 export async function processAnalysis(
   strength: number,
   analysis: AnalysisResult,
@@ -164,7 +152,6 @@ export async function processAnalysis(
       event: "engine_win",
       board,
       tray: updateTrayAfterMove(tray, move.piece),
-      highlighted: getHighlightedSquares(move),
       quartos: move.quarto,
       description: buildQuartoDescription(placedPieceId, placedSquare, move),
       analysis: {} as AnalysisResult,

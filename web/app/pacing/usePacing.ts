@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { FOCUS, PHASE, SIDE, type Focus, type Phase } from "../constants";
 import { openingPhase, positionAfter, type Position } from "../game/position";
-import type { GameState } from "../game/useGame";
+import type { GameState, WinLine } from "../game/useGame";
 
 /**
  * Shows the game one beat at a time, so each change is visible on its own.
@@ -62,7 +62,9 @@ const endOr = (p: Pacing, game: GameState, phase: Phase): Pacing =>
 
 /** The next beat from here, if any. */
 function nextBeat(pacing: Pacing, game: GameState): Beat | null {
-  if (pacing.ended) return null;
+  if (pacing.ended) {
+    return game.over ? null : { after: 0, next: INITIAL };
+  }
   const { lead, handFocus, beforeAction, afterAction } = TIMING;
   // The next move to apply, once the game has it.
   const nextMove = game.history[pacing.movesApplied];
@@ -151,7 +153,8 @@ function nextBeat(pacing: Pacing, game: GameState): Beat | null {
 export type View = Position & {
   phase: Phase | null;
   focus: Focus | null;
-  winSquares: number[];
+  ended: boolean;
+  winLines: WinLine[];
 };
 
 export function usePacing(game: GameState): View {
@@ -169,6 +172,7 @@ export function usePacing(game: GameState): View {
     ...positionAfter(game.history.slice(0, pacing.movesApplied)),
     phase: pacing.phase,
     focus: pacing.focus,
-    winSquares: game.over && caughtUp ? game.winSquares : [],
+    ended: pacing.ended,
+    winLines: game.over && caughtUp ? game.winLines : [],
   };
 }
