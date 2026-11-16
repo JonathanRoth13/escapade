@@ -1,6 +1,6 @@
 export interface Quarto {
   intersection: [number, number, number, number];
-  attribute: string;
+  attribute: number; // id 0-7, see ATTRIBUTE_NAMES
 }
 
 export interface Move {

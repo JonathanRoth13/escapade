@@ -21,7 +21,7 @@ pub struct Move {
 #[derive(Serialize, Clone)]
 pub struct Quarto {
     intersection: [u8; 4],
-    attribute: &'static str,
+    attribute: u8,
 }
 
 #[derive(Serialize)]
@@ -292,32 +292,19 @@ fn extract_square_indices(line_mask: u16) -> [u8; 4] {
     squares
 }
 
-fn get_quarto_attribute(board: &Board, line_mask: u16) -> Vec<&'static str> {
-    // Bit encoding:
-    // bit 0 (value 1): Hollow (1) vs Solid (0)
-    // bit 1 (value 2): Short (1) vs Tall (0)
-    // bit 2 (value 4): Square (1) vs Round (0)
-    // bit 3 (value 8): Dark (1) vs Light (0)
+/// Attributes shared by all four pieces on a completed line, as ids 0-7.
+///
+/// id = 2 * bit + value, where `bit` is the piece bit and `value` is 1 when
+/// every piece on the line has that bit set.
+fn get_quarto_attribute(board: &Board, line_mask: u16) -> Vec<u8> {
     let mut attributes = Vec::new();
 
-    for attr in 0..4 {
-        let attr_mask = board.attribute_masks[attr];
-        if (attr_mask & line_mask) == line_mask {
-            attributes.push(match attr {
-                0 => "hollow",
-                1 => "short",
-                2 => "square",
-                3 => "dark",
-                _ => unreachable!(),
-            });
-        } else if (attr_mask & line_mask) == 0 {
-            attributes.push(match attr {
-                0 => "solid",
-                1 => "tall",
-                2 => "round",
-                3 => "light",
-                _ => unreachable!(),
-            });
+    for bit in 0..4u8 {
+        let shared = board.attribute_masks[bit as usize] & line_mask;
+        if shared == line_mask {
+            attributes.push(2 * bit + 1);
+        } else if shared == 0 {
+            attributes.push(2 * bit);
         }
     }
 

@@ -1,5 +1,15 @@
-import { AnalysisResult, Orbit, Move } from "@/app/types/engine";
+import { AnalysisResult, Orbit, Move, Quarto } from "@/app/types/engine";
 import type { EngineResponse, PlayerMove } from "@/app/types/api";
+import { ATTRIBUTE_NAMES } from "@/app/components/piece/attributes";
+
+function describeQuartos(quartos: Quarto[]): string {
+  return quartos
+    .map(
+      ({ intersection: [a, b, c, d], attribute }) =>
+        `The pieces on squares ${a}, ${b}, ${c}, and ${d} are all ${ATTRIBUTE_NAMES[attribute]}.`,
+    )
+    .join(" ");
+}
 
 function getBoard(ply_grid: string): (number | undefined)[] {
   const board: (number | undefined)[] = new Array(16);
@@ -80,12 +90,7 @@ function extractMovesFromAnalysis(analysis: AnalysisResult): PlayerMove[] {
         let description: string;
 
         if (move.quarto) {
-          // This move creates a quarto
-          const sentences = move.quarto.map(
-            (q) =>
-              `The pieces on squares ${q.intersection[0]}, ${q.intersection[1]}, ${q.intersection[2]}, and ${q.intersection[3]} are all ${q.attribute}.`,
-          );
-          description = `You placed piece ${pieceInHand} on square ${move.square}. Quarto! ${sentences.join(" ")}`;
+          description = `You placed piece ${pieceInHand} on square ${move.square}. Quarto! ${describeQuartos(move.quarto)}`;
         } else if (move.square !== undefined && move.piece === undefined) {
           // Last move - placing piece but no next piece (draw)
           description = `You placed piece ${pieceInHand} on square ${move.square}. The board is full. The game ends in a draw.`;
@@ -93,7 +98,6 @@ function extractMovesFromAnalysis(analysis: AnalysisResult): PlayerMove[] {
           // Selecting a piece from tray (first move of game)
           description = `You selected piece ${move.piece}.`;
         } else if (pieceInHand !== undefined) {
-          // Placing piece on board and selecting next piece
           description = `You placed piece ${pieceInHand} on square ${move.square} and selected piece ${move.piece}.`;
         } else {
           // Should not happen, but handle gracefully
@@ -119,12 +123,7 @@ function buildQuartoDescription(
 ): string {
   if (!move.quarto) return "";
 
-  const sentences = move.quarto.map(
-    (q) =>
-      `The pieces on squares ${q.intersection[0]}, ${q.intersection[1]}, ${q.intersection[2]}, and ${q.intersection[3]} are all ${q.attribute}.`,
-  );
-
-  return `The opponent placed piece ${placedPieceId} on square ${placedSquare}. Quarto! ${sentences.join(" ")}`;
+  return `The opponent placed piece ${placedPieceId} on square ${placedSquare}. Quarto! ${describeQuartos(move.quarto)}`;
 }
 
 function getHighlightedSquares(move: Move): boolean[] {
@@ -155,7 +154,6 @@ export async function processAnalysis(
   );
   const move = selectMove(bestMoves, allMoves, strength);
 
-  // Handle Quarto (engine wins)
   if (move.quarto) {
     const board = getBoard(analysis.ply_grid);
     const placedPieceId = parseInt(analysis.ply_grid[16], 16);
@@ -189,7 +187,6 @@ export async function processAnalysis(
     };
   }
 
-  // Normal move - game continues
   const nextAnalysis = await analyzePosition(move.hex);
   const description =
     layer === 0
