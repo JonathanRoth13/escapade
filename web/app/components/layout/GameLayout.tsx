@@ -8,6 +8,7 @@ export default function GameLayout({
   phase,
   you,
   headerActions,
+  coach,
 }: {
   tray: ReactNode;
   board: ReactNode;
@@ -15,6 +16,7 @@ export default function GameLayout({
   phase: ReactNode;
   you: ReactNode;
   headerActions: ReactNode;
+  coach: ReactNode;
 }) {
   return (
     <div className={styles.page}>
@@ -25,7 +27,10 @@ export default function GameLayout({
       <main className={styles.main}>
         <div className={styles.layout}>
           <div className={styles.tray}>{tray}</div>
-          <div className={styles.board}>{board}</div>
+          <div className={styles.board}>
+            {board}
+            {coach && <div className={styles.coach}>{coach}</div>}
+          </div>
           <div className={styles.opponent}>{opponent}</div>
           <div className={`${styles.phase} ${styles.panel}`}>{phase}</div>
           <div className={styles.you}>{you}</div>

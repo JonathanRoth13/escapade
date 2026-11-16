@@ -21,8 +21,19 @@ export const PHASE_SIDE: Record<Phase, Side> = {
   [PHASE.YOU_PLACE]: SIDE.YOU,
 };
 
+export const FOCUS = {
+  HANDOVER: "handover",
+  HAND: "hand",
+  BOARD: "board",
+  SETTLE: "settle",
+  TRAY: "tray",
+} as const;
+
+export type Focus = (typeof FOCUS)[keyof typeof FOCUS];
+
 export const BOARD_MARK = {
   LAST_MOVE: "last-move",
+  WIN_LINE: "win-line",
 } as const;
 
 export type BoardMark = (typeof BOARD_MARK)[keyof typeof BOARD_MARK];

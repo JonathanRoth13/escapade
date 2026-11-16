@@ -6,6 +6,7 @@
 
   --mark-last-move: rgb(20 85 30 / 0.12);
   --mark-hover: rgb(20 85 30 / 0.22);
+  --mark-win-line: rgb(255 170 0 / 0.5);
 
   --ring-duration: 250ms;
   --mark-duration: 200ms;
@@ -101,6 +102,10 @@
 
 .mark[data-mark="last-move"] {
   background: var(--mark-last-move);
+}
+
+.mark[data-mark="win-line"] {
+  background: var(--mark-win-line);
 }
 
 /* Placement dot, shown only on the empty square under the cursor. */
