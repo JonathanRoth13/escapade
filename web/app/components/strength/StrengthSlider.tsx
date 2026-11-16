@@ -3,14 +3,16 @@ import styles from "./StrengthSlider.module.css";
 export default function StrengthSlider({
   value,
   onChange,
+  highlighted,
 }: {
   value: number;
   onChange: (value: number) => void;
+  highlighted: boolean;
 }) {
   return (
-    <div className={styles.slider}>
+    <div className={styles.slider} data-highlighted={highlighted}>
       <label className={styles.label}>
-        <span>Opponent strength</span>
+        <span className={styles.title}>Difficulty</span>
         <span className={styles.value}>{value}</span>
         <input
           type="range"
@@ -22,8 +24,8 @@ export default function StrengthSlider({
         />
       </label>
       <div className={styles.ends}>
-        <span>Random</span>
-        <span>Perfect</span>
+        <span>Easy</span>
+        <span>Less Easy</span>
       </div>
     </div>
   );

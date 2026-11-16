@@ -21,6 +21,13 @@ export const PHASE_SIDE: Record<Phase, Side> = {
   [PHASE.YOU_PLACE]: SIDE.YOU,
 };
 
+export const PHASE_LABEL: Record<Phase, string> = {
+  [PHASE.YOU_SELECT]: "Player selects a piece",
+  [PHASE.OPPONENT_PLACES]: "Opponent places the piece",
+  [PHASE.OPPONENT_SELECTS]: "Opponent selects a piece",
+  [PHASE.YOU_PLACE]: "Player places the piece",
+};
+
 export const FOCUS = {
   HANDOVER: "handover",
   HAND: "hand",

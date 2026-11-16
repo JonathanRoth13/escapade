@@ -1,15 +1,8 @@
 import type { CSSProperties } from "react";
-import { PHASE, PHASE_SIDE, type Phase } from "../../constants";
+import { PHASE, PHASE_LABEL, PHASE_SIDE, type Phase } from "../../constants";
 import styles from "./PhaseIndicator.module.css";
 
 const PHASES = Object.values(PHASE);
-
-const LABEL: Record<Phase, string> = {
-  [PHASE.YOU_SELECT]: "Player selects a piece",
-  [PHASE.OPPONENT_PLACES]: "Opponent places the piece",
-  [PHASE.OPPONENT_SELECTS]: "Opponent selects a piece",
-  [PHASE.YOU_PLACE]: "Player places the piece",
-};
 
 export default function PhaseIndicator({ phase }: { phase: Phase | null }) {
   const index = phase === null ? -1 : PHASES.indexOf(phase);
@@ -31,7 +24,7 @@ export default function PhaseIndicator({ phase }: { phase: Phase | null }) {
           data-current={step === phase}
         >
           <span className={styles.dot} />
-          {LABEL[step]}
+          {PHASE_LABEL[step]}
         </li>
       ))}
     </ol>

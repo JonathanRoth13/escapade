@@ -3,18 +3,46 @@
   border-radius: 4px;
   background: #fff;
   box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+  transition: box-shadow 250ms ease;
 }
 
+/* Same ring as the board, tray and hand boxes, popping in on arrival. */
+.slider[data-highlighted="true"] {
+  box-shadow:
+    0 0 0 3px var(--accent-you),
+    0 0 20px 2px color-mix(in srgb, transparent, var(--accent-you) 35%);
+  animation: ring-in 450ms ease-out;
+}
+
+@keyframes ring-in {
+  from {
+    box-shadow:
+      0 0 0 0 var(--accent-you),
+      0 0 0 0 transparent;
+  }
+  60% {
+    box-shadow:
+      0 0 0 6px var(--accent-you),
+      0 0 28px 6px color-mix(in srgb, transparent, var(--accent-you) 45%);
+  }
+}
+
+/* Three columns so the title stays centred with the number on the right. */
 .label {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr auto 1fr;
   row-gap: 0.375rem;
   font-size: 0.875rem;
   font-weight: 600;
   color: #6b7280;
 }
 
+.title {
+  grid-column: 2;
+}
+
 .value {
+  justify-self: end;
   color: #1f2937;
   font-variant-numeric: tabular-nums;
 }

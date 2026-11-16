@@ -59,6 +59,16 @@
   filter: brightness(1.1);
 }
 
+.button[data-secondary="true"] {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.button[data-secondary="true"]:hover {
+  filter: none;
+  background: #e5e7eb;
+}
+
 @keyframes card-in {
   from {
     opacity: 0;

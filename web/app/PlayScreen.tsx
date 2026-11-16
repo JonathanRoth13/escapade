@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import About from "./components/about/About";
 import Board from "./components/board/Board";
 import type { BoardMarks } from "./components/board/types";
+import CoachCard from "./components/coach/CoachCard";
 import GameOverCard from "./components/coach/GameOverCard";
 import WelcomeCard from "./components/coach/WelcomeCard";
 import Feedback from "./components/feedback/Feedback";
@@ -23,12 +24,15 @@ import {
 } from "./constants";
 import { useGame } from "./game/useGame";
 import { usePacing } from "./pacing/usePacing";
+import { useTutorial } from "./tutorial/useTutorial";
 
 export default function PlayScreen() {
   const [strength, setStrength] = useState(85);
   const game = useGame({ strength });
-  const view = usePacing(game.state);
+  const tutorial = useTutorial();
+  const view = usePacing(game.state, tutorial.holds);
   const { phase, focus } = view;
+  const step = tutorial.stepAt(phase, focus);
 
   const boardMarks: BoardMarks = {};
   if (view.lastMove !== null) {
@@ -46,8 +50,32 @@ export default function PlayScreen() {
       <GameOverCard
         winner={game.state.winner}
         lines={view.winLines}
-        onPlayAgain={game.start}
+        onPlayAgain={(first) => {
+          tutorial.stop(); // the tutorial is for the first game only
+          game.start(first);
+        }}
       />
+    );
+  } else if (step) {
+    coach = (
+      <CoachCard
+        key={step.id}
+        title={step.title}
+        actions={[
+          ...(tutorial.atStart
+            ? [
+                {
+                  label: "Skip tutorial",
+                  secondary: true,
+                  onClick: tutorial.stop,
+                },
+              ]
+            : []),
+          { label: "Continue", onClick: () => tutorial.finish(step.id) },
+        ]}
+      >
+        {step.body}
+      </CoachCard>
     );
   }
 
@@ -94,7 +122,11 @@ export default function PlayScreen() {
             piece={view.hands[SIDE.OPPONENT]}
             active={actorOn(FOCUS.HAND) === SIDE.OPPONENT}
           />
-          <StrengthSlider value={strength} onChange={setStrength} />
+          <StrengthSlider
+            value={strength}
+            onChange={setStrength}
+            highlighted={step?.slider === true}
+          />
         </div>
       }
       phase={

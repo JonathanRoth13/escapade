@@ -39,6 +39,8 @@ const INITIAL: Pacing = {
 };
 
 /** One step of what's on screen: after `after` milliseconds, pacing becomes `next`. */
+type Hold = (phase: Phase | null, focus: Focus | null) => boolean;
+
 type Beat = { after: number; next: Pacing };
 
 const focusOn = (p: Pacing, focus: Focus | null): Pacing => ({ ...p, focus });
@@ -61,10 +63,11 @@ const endOr = (p: Pacing, game: GameState, phase: Phase): Pacing =>
     : toPhase(p, phase);
 
 /** The next beat from here, if any. */
-function nextBeat(pacing: Pacing, game: GameState): Beat | null {
+function nextBeat(pacing: Pacing, game: GameState, hold: Hold): Beat | null {
   if (pacing.ended) {
     return game.over ? null : { after: 0, next: INITIAL };
   }
+  if (hold(pacing.phase, pacing.focus)) return null;
   const { lead, handFocus, beforeAction, afterAction } = TIMING;
   // The next move to apply, once the game has it.
   const nextMove = game.history[pacing.movesApplied];
@@ -157,15 +160,15 @@ export type View = Position & {
   winLines: WinLine[];
 };
 
-export function usePacing(game: GameState): View {
+export function usePacing(game: GameState, hold: Hold): View {
   const [pacing, setPacing] = useState<Pacing>(INITIAL);
 
   useEffect(() => {
-    const beat = nextBeat(pacing, game);
+    const beat = nextBeat(pacing, game, hold);
     if (!beat) return;
     const timer = setTimeout(() => setPacing(beat.next), beat.after);
     return () => clearTimeout(timer);
-  }, [pacing, game]);
+  }, [pacing, game, hold]);
 
   const caughtUp = pacing.movesApplied === game.history.length;
   return {
