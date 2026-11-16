@@ -11,13 +11,6 @@ const LABEL: Record<Phase, string> = {
   [PHASE.YOU_PLACE]: "Player places the piece",
 };
 
-/**
- * The four-step turn cycle with the current step lit. `phase: null`
- * (e.g. game over) lights nothing.
- *
- * On desktop the highlight is one pill that slides between steps and takes
- * on the current side's colour, so a phase change reads as movement.
- */
 export default function PhaseIndicator({ phase }: { phase: Phase | null }) {
   const index = phase === null ? -1 : PHASES.indexOf(phase);
 
@@ -38,7 +31,7 @@ export default function PhaseIndicator({ phase }: { phase: Phase | null }) {
           data-current={step === phase}
         >
           <span className={styles.dot} />
-          <span className={styles.label}>{LABEL[step]}</span>
+          {LABEL[step]}
         </li>
       ))}
     </ol>

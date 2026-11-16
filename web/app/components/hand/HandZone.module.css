@@ -56,7 +56,7 @@
 
 .slot {
   position: relative; /* anchors the piece and tooltip */
-  width: 4.5rem;
+  width: var(--tray-slot);
   aspect-ratio: 1;
 }
 

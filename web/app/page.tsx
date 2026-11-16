@@ -4,6 +4,7 @@ import { useState } from "react";
 import Board from "./components/board/Board";
 import type { BoardPieces } from "./components/board/types";
 import HandZone from "./components/hand/HandZone";
+import GameLayout from "./components/layout/GameLayout";
 import PhaseIndicator from "./components/phase/PhaseIndicator";
 import Tray from "./components/tray/Tray";
 import {
@@ -62,49 +63,46 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-4">
-      <h1 className="text-4xl font-bold">ESCAPADE</h1>
-      <div className="flex gap-6">
-        <div className="w-[120px]">
-          <Tray
-            available={available}
-            marks={
-              placing && picked !== null ? { [picked]: [TRAY_MARK.PICKED] } : {}
-            }
-            live={selecting}
-            actor={selecting ? actor : null}
-            onPieceClick={selectPiece}
-          />
-        </div>
-        <div className="w-[480px]">
-          <Board
-            pieces={pieces}
-            marks={
-              lastMove === null ? {} : { [lastMove]: [BOARD_MARK.LAST_MOVE] }
-            }
-            live={placing}
-            actor={placing ? actor : null}
-            onSquareClick={placePiece}
-          />
-        </div>
-        <div className="flex w-80 flex-col justify-between">
-          <HandZone
-            side={SIDE.OPPONENT}
-            label="Opponent"
-            piece={opponentHand}
-            active={phase === PHASE.OPPONENT_PLACES}
-          />
-          <div className="rounded bg-white p-3 shadow-sm">
-            <PhaseIndicator phase={phase} />
-          </div>
-          <HandZone
-            side={SIDE.YOU}
-            label="Player"
-            piece={yourHand}
-            active={phase === PHASE.YOU_PLACE}
-          />
-        </div>
-      </div>
-    </main>
+    <GameLayout
+      tray={
+        <Tray
+          available={available}
+          marks={
+            placing && picked !== null ? { [picked]: [TRAY_MARK.PICKED] } : {}
+          }
+          live={selecting}
+          actor={selecting ? actor : null}
+          onPieceClick={selectPiece}
+        />
+      }
+      board={
+        <Board
+          pieces={pieces}
+          marks={
+            lastMove === null ? {} : { [lastMove]: [BOARD_MARK.LAST_MOVE] }
+          }
+          live={placing}
+          actor={placing ? actor : null}
+          onSquareClick={placePiece}
+        />
+      }
+      opponent={
+        <HandZone
+          side={SIDE.OPPONENT}
+          label="Opponent"
+          piece={opponentHand}
+          active={phase === PHASE.OPPONENT_PLACES}
+        />
+      }
+      phase={<PhaseIndicator phase={phase} />}
+      you={
+        <HandZone
+          side={SIDE.YOU}
+          label="Player"
+          piece={yourHand}
+          active={phase === PHASE.YOU_PLACE}
+        />
+      }
+    />
   );
 }

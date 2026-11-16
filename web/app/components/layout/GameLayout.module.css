@@ -1,0 +1,108 @@
+.page {
+  --header-height: 3rem;
+
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+.title {
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.layout {
+  --gap: 1.5rem;
+  --side: 20rem;
+  /* 50rem, or smaller if the window can't fit that (tray is a quarter of
+     the board wide). The cap is in rem so browser zoom scales the board
+     along with the text and side column. */
+  --board: max(
+    20rem,
+    min(
+      50rem,
+      100dvh - var(--header-height) - 2 * var(--gap),
+      (100vw - var(--side) - 4 * var(--gap)) / 1.25
+    )
+  );
+  /* One tray slot: the tray's width less its 1px border on each side, per
+     column. */
+  --tray-slot: calc((var(--board) / 4 - 2px) / 2);
+
+  display: grid;
+  grid-template-columns: calc(var(--board) / 4) var(--board) var(--side);
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "tray board opponent"
+    "tray board phase"
+    "tray board you";
+  gap: var(--gap);
+  height: var(--board);
+}
+
+.tray {
+  grid-area: tray;
+}
+.board {
+  grid-area: board;
+}
+.opponent {
+  grid-area: opponent;
+}
+/* Centred vertically between the two hand zones. */
+.phase {
+  grid-area: phase;
+  align-self: center;
+}
+.you {
+  grid-area: you;
+}
+
+.panel {
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+  padding: 0.75rem;
+  /* On short windows the side column doesn't fit the board's height; these
+     let the phase row shrink so the hand zones stay level with the board. */
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ---------- Unsupported screens ---------- */
+
+/* Windows under 1024px wide, or in portrait, get a message instead of the
+   game. */
+.unsupported {
+  display: none;
+  max-width: 24rem;
+  padding: 0 1rem;
+  text-align: center;
+  color: #4b5563;
+}
+
+@media (max-width: 1023px), (orientation: portrait) {
+  .layout {
+    display: none;
+  }
+
+  .unsupported {
+    display: block;
+  }
+}
