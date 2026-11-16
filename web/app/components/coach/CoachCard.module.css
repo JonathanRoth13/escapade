@@ -21,12 +21,21 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  margin-top: 0.5rem;
   font-size: 0.9375rem;
   line-height: 1.5;
   color: #374151;
   text-align: center;
   text-wrap: balance;
+}
+
+.title + .body {
+  margin-top: 0.5rem;
+}
+
+.body a {
+  color: var(--accent-you);
+  font-weight: 600;
+  text-decoration: underline;
 }
 
 /* A row of equal buttons. */

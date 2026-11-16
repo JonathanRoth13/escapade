@@ -7,7 +7,7 @@ export default function CoachCard({
   actions,
   delay = 0,
 }: {
-  title: string;
+  title?: string;
   children?: ReactNode;
   actions: { label: string; onClick: () => void }[];
   /** Milliseconds before the card fades in. */
@@ -20,7 +20,7 @@ export default function CoachCard({
       aria-label={title}
       style={{ animationDelay: `${delay}ms` }}
     >
-      <h2 className={styles.title}>{title}</h2>
+      {title && <h2 className={styles.title}>{title}</h2>}
       {children && <div className={styles.body}>{children}</div>}
       <div className={styles.actions}>
         {actions.map(({ label, onClick }) => (

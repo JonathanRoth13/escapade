@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import About from "./components/about/About";
 import Board from "./components/board/Board";
 import type { BoardMarks } from "./components/board/types";
-import CoachCard from "./components/coach/CoachCard";
 import GameOverCard from "./components/coach/GameOverCard";
+import WelcomeCard from "./components/coach/WelcomeCard";
 import Feedback from "./components/feedback/Feedback";
 import HandZone from "./components/hand/HandZone";
 import GameLayout from "./components/layout/GameLayout";
@@ -37,18 +38,9 @@ export default function PlayScreen() {
     boardMarks[sq] = [...(boardMarks[sq] ?? []), BOARD_MARK.WIN_LINE];
   }
 
-  // At most one card over the board: who goes first, or the result.
   let coach: ReactNode = null;
   if (game.state.first === null) {
-    coach = (
-      <CoachCard
-        title="Who goes first?"
-        actions={[
-          { label: "Go first", onClick: () => game.start(SIDE.YOU) },
-          { label: "Go second", onClick: () => game.start(SIDE.OPPONENT) },
-        ]}
-      />
-    );
+    coach = <WelcomeCard onStart={game.start} />;
   } else if (view.ended) {
     coach = (
       <GameOverCard
@@ -69,7 +61,12 @@ export default function PlayScreen() {
 
   return (
     <GameLayout
-      headerActions={<Feedback />}
+      headerActions={
+        <>
+          <About />
+          <Feedback />
+        </>
+      }
       tray={
         <Tray
           available={view.available}
