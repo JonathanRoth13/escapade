@@ -1,13 +1,10 @@
-import type { Side } from "../side";
+import { TRAY_MARK, type Side, type TrayMark } from "../../constants";
 import PieceTooltip from "../piece/PieceTooltip";
 import styles from "./Tray.module.css";
 
-/** Visual annotations a tray slot can carry. */
-const ALL_MARKS = ["picked"] as const;
-
-type TrayMark = (typeof ALL_MARKS)[number];
-
 type TrayMarks = Partial<Record<number, TrayMark[]>>;
+
+const MARKS = Object.values(TRAY_MARK);
 
 export default function Tray({
   available,
@@ -35,7 +32,7 @@ export default function Tray({
             disabled={!live || !isAvailable}
             onClick={() => onPieceClick(piece)}
           >
-            {ALL_MARKS.map((mark) => (
+            {MARKS.map((mark) => (
               <span
                 key={mark}
                 className={styles.mark}

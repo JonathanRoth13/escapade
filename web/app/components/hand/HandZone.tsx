@@ -1,4 +1,4 @@
-import type { Side } from "../side";
+import type { Side } from "../../constants";
 import PieceTooltip from "../piece/PieceTooltip";
 import styles from "./HandZone.module.css";
 

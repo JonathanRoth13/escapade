@@ -4,55 +4,62 @@ import { useState } from "react";
 import Board from "./components/board/Board";
 import type { BoardPieces } from "./components/board/types";
 import HandZone from "./components/hand/HandZone";
+import PhaseIndicator from "./components/phase/PhaseIndicator";
 import Tray from "./components/tray/Tray";
-
-// Placeholder until the play screen lands: pass-and-play, where you click
-// for both sides through the four steps of a turn.
-type Step = "you-select" | "opponent-places" | "opponent-selects" | "you-place";
+import {
+  BOARD_MARK,
+  PHASE,
+  PHASE_SIDE,
+  SIDE,
+  TRAY_MARK,
+  type Phase,
+} from "./constants";
 
 export default function Home() {
   const [pieces, setPieces] = useState<BoardPieces>(Array(16).fill(null));
   const [available, setAvailable] = useState<boolean[]>(Array(16).fill(true));
   const [yourHand, setYourHand] = useState<number | null>(null);
   const [opponentHand, setOpponentHand] = useState<number | null>(null);
-  const [step, setStep] = useState<Step>("you-select");
+  const [phase, setPhase] = useState<Phase | null>(PHASE.YOU_SELECT);
   const [lastMove, setLastMove] = useState<number | null>(null);
   const [picked, setPicked] = useState<number | null>(null);
 
-  const selecting = step === "you-select" || step === "opponent-selects";
-  const trayEmpty = available.every((a) => !a);
+  const selecting =
+    phase === PHASE.YOU_SELECT || phase === PHASE.OPPONENT_SELECTS;
+  const placing = phase === PHASE.YOU_PLACE || phase === PHASE.OPPONENT_PLACES;
+  const actor = phase && PHASE_SIDE[phase];
 
   const selectPiece = (piece: number) => {
     const next = [...available];
     next[piece] = false;
     setAvailable(next);
     setPicked(piece);
-    if (step === "you-select") {
+    if (phase === PHASE.YOU_SELECT) {
       setOpponentHand(piece);
-      setStep("opponent-places");
+      setPhase(PHASE.OPPONENT_PLACES);
     } else {
       setYourHand(piece);
-      setStep("you-place");
+      setPhase(PHASE.YOU_PLACE);
     }
   };
 
   const placePiece = (square: number) => {
     const next = [...pieces];
-    if (step === "opponent-places") {
+    if (phase === PHASE.OPPONENT_PLACES) {
       next[square] = opponentHand;
       setOpponentHand(null);
-      setStep("opponent-selects");
     } else {
       next[square] = yourHand;
       setYourHand(null);
-      setStep("you-select");
     }
+    const nextPhase =
+      phase === PHASE.OPPONENT_PLACES
+        ? PHASE.OPPONENT_SELECTS
+        : PHASE.YOU_SELECT;
+    setPhase(next.every((p) => p !== null) ? null : nextPhase);
     setPieces(next);
     setLastMove(square);
   };
-
-  const actor =
-    step === "you-select" || step === "you-place" ? "you" : "opponent";
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-4">
@@ -62,34 +69,39 @@ export default function Home() {
           <Tray
             available={available}
             marks={
-              !selecting && picked !== null ? { [picked]: ["picked"] } : {}
+              placing && picked !== null ? { [picked]: [TRAY_MARK.PICKED] } : {}
             }
-            live={selecting && !trayEmpty}
-            actor={selecting && !trayEmpty ? actor : null}
+            live={selecting}
+            actor={selecting ? actor : null}
             onPieceClick={selectPiece}
           />
         </div>
         <div className="w-[480px]">
           <Board
             pieces={pieces}
-            marks={lastMove === null ? {} : { [lastMove]: ["last-move"] }}
-            live={!selecting}
-            actor={selecting ? null : actor}
+            marks={
+              lastMove === null ? {} : { [lastMove]: [BOARD_MARK.LAST_MOVE] }
+            }
+            live={placing}
+            actor={placing ? actor : null}
             onSquareClick={placePiece}
           />
         </div>
-        <div className="flex flex-col justify-between">
+        <div className="flex w-80 flex-col justify-between">
           <HandZone
-            side="opponent"
+            side={SIDE.OPPONENT}
             label="Opponent"
             piece={opponentHand}
-            active={step === "opponent-places"}
+            active={phase === PHASE.OPPONENT_PLACES}
           />
+          <div className="rounded bg-white p-3 shadow-sm">
+            <PhaseIndicator phase={phase} />
+          </div>
           <HandZone
-            side="you"
+            side={SIDE.YOU}
             label="Player"
             piece={yourHand}
-            active={step === "you-place"}
+            active={phase === PHASE.YOU_PLACE}
           />
         </div>
       </div>

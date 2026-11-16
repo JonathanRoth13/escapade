@@ -1,9 +1,11 @@
 import PieceTooltip from "../piece/PieceTooltip";
 import styles from "./Board.module.css";
-import type { Side } from "../side";
-import { ALL_MARKS, type BoardMarks, type BoardPieces } from "./types";
+import { BOARD_MARK, type Side } from "../../constants";
+import type { BoardMarks, BoardPieces } from "./types";
 
 const DISPLAY_ORDER = [12, 13, 14, 15, 8, 9, 10, 11, 4, 5, 6, 7, 0, 1, 2, 3];
+
+const MARKS = Object.values(BOARD_MARK);
 
 /**
  * Layered board, modelled on lichess's chessground:
@@ -12,7 +14,7 @@ const DISPLAY_ORDER = [12, 13, 14, 15, 8, 9, 10, 11, 4, 5, 6, 7, 0, 1, 2, 3];
  *   2. marks   – per-square tint layers; always rendered and faded with
  *                opacity so they transition both in and out, plus a hover
  *                dot on empty squares (every empty square is playable in
- *                Quarto, so this needs no input from the controller)
+ *                Quarto, so this needs no input from the caller)
  *   3. pieces  – fade in when they first appear
  * Highlights never use borders, so they never change the board's geometry.
  *
@@ -51,7 +53,7 @@ export default function Board({
             disabled={!live || !empty}
             onClick={() => onSquareClick(square)}
           >
-            {ALL_MARKS.map((mark) => (
+            {MARKS.map((mark) => (
               <span
                 key={mark}
                 className={styles.mark}
