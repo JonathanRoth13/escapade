@@ -1,0 +1,17 @@
+# OS
+.DS_Store
+
+# Engine build output and generated tablebase
+engine/target/
+engine/tablebase/
+
+# Web
+web/node_modules/
+web/.next/
+web/next-env.d.ts
+web/tsconfig.tsbuildinfo
+web/public/tablebase.tar.gz
+
+# Secrets
+web/.env*
+!web/.env.example
