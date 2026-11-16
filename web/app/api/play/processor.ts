@@ -167,6 +167,7 @@ export async function processAnalysis(
       board,
       tray: updateTrayAfterMove(tray, move.piece),
       highlighted: getHighlightedSquares(move),
+      quartos: move.quarto,
       description: buildQuartoDescription(placedPieceId, placedSquare, move),
       analysis: {} as AnalysisResult,
     };

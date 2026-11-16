@@ -80,6 +80,8 @@ export interface EngineWinResponse {
   // Squares to highlight (the winning line)
   highlighted: boolean[]; // 16 booleans
 
+  quartos: Quarto[];
+
   // Human-readable description of the win
   description: string;
   analysis: AnalysisResult
